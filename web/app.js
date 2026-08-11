@@ -37,6 +37,20 @@
     v.setUint32(1, seq >>> 0, true);
     return b;
   }
+  function frameButton(button, down) {
+    const b = new ArrayBuffer(3), v = new DataView(b);
+    v.setUint8(0, PROTO.OP_BUTTON);
+    v.setUint8(1, button);
+    v.setUint8(2, down ? 1 : 0);
+    return b;
+  }
+  function frameScroll(sx, sy) {
+    const b = new ArrayBuffer(5), v = new DataView(b);
+    v.setUint8(0, PROTO.OP_SCROLL);
+    v.setInt16(1, clamp16(sx), true);
+    v.setInt16(3, clamp16(sy), true);
+    return b;
+  }
 
   // ---- connection ----------------------------------------------------------
   const statusText = document.getElementById("statusText");
@@ -122,6 +136,15 @@
   window.NET = {
     send: send,
     move: (dx, dy) => send(frameMove(dx, dy)),
+    button: (button, down) => send(frameButton(button, down)),
+    scroll: (sx, sy) => send(frameScroll(sx, sy)),
+    // Safety: let go of every button (used on page-hide / phone-lock, when the
+    // socket may still be open so the server's own release_all hasn't fired).
+    releaseButtons: () => {
+      send(frameButton(PROTO.BTN_LEFT, 0));
+      send(frameButton(PROTO.BTN_RIGHT, 0));
+      send(frameButton(PROTO.BTN_MIDDLE, 0));
+    },
     isOpen: () => !!ws && ws.readyState === WebSocket.OPEN,
     rtt: () => rttEMA,
   };

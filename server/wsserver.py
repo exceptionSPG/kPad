@@ -56,10 +56,16 @@ class Server:
         if op == P.OP_MOVE:
             dx, dy = P.read_move(data)
             self.inp.move(dx, dy)
+        elif op == P.OP_BUTTON:
+            button, down = P.read_button(data)
+            self.inp.button(button, down)
+        elif op == P.OP_SCROLL:
+            sx, sy = P.read_scroll(data)
+            self.inp.scroll(sx, sy)
         elif op == P.OP_PING:
             seq = P.read_u32(data)
             await ws.send_bytes(P.frame_pong(seq))
-        # Other opcodes arrive in later slices.
+        # Keyboard/clipboard opcodes arrive in later slices.
 
     # --------------------------------------------------------------- run ----
     def build_app(self):

@@ -55,6 +55,13 @@ html, body {
   user-select: none;
 }
 #pad.active { background: var(--pad-active); }
+/* drag in progress */
+#pad.dragging { box-shadow: inset 0 0 0 2px var(--ok); }
+/* drag-lock engaged: button stays down until you tap to drop */
+#pad.locked {
+  box-shadow: inset 0 0 0 3px var(--warn);
+  background: #221d16;
+}
 
 /* Dev tuning panel */
 #dev {

@@ -1,56 +1,121 @@
 """
 Input synthesis via Quartz CGEvent.
 
-Slice 1 implements pointer movement + the release-all safety invariant. Buttons,
-scroll, keys and text land in later slices, but release_all() already knows how
-to let go of anything we might hold, so the invariant is in place from the start.
+Slice 2: pointer move (drag-aware), mouse buttons with click-state so the OS
+recognises double/triple clicks, and pixel-unit scroll. Keys/text arrive later.
 
 SAFETY INVARIANT: on any disconnect the caller must invoke release_all(). A
-stuck mouse-down or held modifier makes the whole Mac unusable.
+stuck mouse-down or held modifier makes the whole Mac unusable. Every held
+button is tracked so release_all() can let go of exactly what's down.
 """
+
+import time
 
 import Quartz
 
+from . import protocol as P
 from .displays import Displays
+
+# Two synthesized clicks within this window + distance become a double-click.
+_DOUBLE_CLICK_SEC = 0.5
+_DOUBLE_CLICK_DIST = 6.0
+
+_BTN_CG = {
+    P.BTN_LEFT: Quartz.kCGMouseButtonLeft,
+    P.BTN_RIGHT: Quartz.kCGMouseButtonRight,
+    P.BTN_MIDDLE: Quartz.kCGMouseButtonCenter,
+}
+_DOWN_TYPE = {
+    P.BTN_LEFT: Quartz.kCGEventLeftMouseDown,
+    P.BTN_RIGHT: Quartz.kCGEventRightMouseDown,
+    P.BTN_MIDDLE: Quartz.kCGEventOtherMouseDown,
+}
+_UP_TYPE = {
+    P.BTN_LEFT: Quartz.kCGEventLeftMouseUp,
+    P.BTN_RIGHT: Quartz.kCGEventRightMouseUp,
+    P.BTN_MIDDLE: Quartz.kCGEventOtherMouseUp,
+}
+_DRAG_TYPE = {
+    P.BTN_LEFT: Quartz.kCGEventLeftMouseDragged,
+    P.BTN_RIGHT: Quartz.kCGEventRightMouseDragged,
+    P.BTN_MIDDLE: Quartz.kCGEventOtherMouseDragged,
+}
 
 
 class MacInput:
     def __init__(self, displays: Displays):
         self.displays = displays
-        self._buttons_down = set()   # BTN_* currently pressed (filled in later slices)
-        self._mods_down = 0          # MOD_* bitmask currently held (later slices)
+        self._buttons_down = set()   # BTN_* currently pressed
+        self._mods_down = 0          # MOD_* bitmask (keyboard slice)
+        self._last_click_t = 0.0
+        self._last_click_pos = (0.0, 0.0)
+        self._click_state = 0
 
-    # ------------------------------------------------------------- pointer --
     def _current_location(self):
-        # Reflects our own posted moves; re-reading each stroke also absorbs any
-        # physical-mouse movement the user makes between events.
-        ev = Quartz.CGEventCreate(None)
-        p = Quartz.CGEventGetLocation(ev)
+        p = Quartz.CGEventGetLocation(Quartz.CGEventCreate(None))
         return p.x, p.y
 
+    def _post(self, ev):
+        Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev)
+
+    # ------------------------------------------------------------- pointer --
     def move(self, dx: float, dy: float):
         x, y = self._current_location()
         x, y = self.displays.clamp(x + dx, y + dy)
-        ev = Quartz.CGEventCreateMouseEvent(
-            None, Quartz.kCGEventMouseMoved, (x, y), Quartz.kCGMouseButtonLeft
+        # If a button is held, emit the matching *Dragged* event so apps see a
+        # real drag (text selection, window move), not a plain hover.
+        held = next(iter(self._buttons_down), None)
+        if held is None:
+            ev = Quartz.CGEventCreateMouseEvent(
+                None, Quartz.kCGEventMouseMoved, (x, y), Quartz.kCGMouseButtonLeft
+            )
+        else:
+            ev = Quartz.CGEventCreateMouseEvent(
+                None, _DRAG_TYPE[held], (x, y), _BTN_CG[held]
+            )
+        self._post(ev)
+
+    # -------------------------------------------------------------- button --
+    def button(self, button: int, down: int):
+        if button not in _BTN_CG:
+            return
+        x, y = self._current_location()
+        cg = _BTN_CG[button]
+        if down:
+            now = time.monotonic()
+            lx, ly = self._last_click_pos
+            near = abs(x - lx) <= _DOUBLE_CLICK_DIST and abs(y - ly) <= _DOUBLE_CLICK_DIST
+            if now - self._last_click_t <= _DOUBLE_CLICK_SEC and near:
+                self._click_state += 1
+            else:
+                self._click_state = 1
+            self._last_click_t = now
+            self._last_click_pos = (x, y)
+            ev = Quartz.CGEventCreateMouseEvent(None, _DOWN_TYPE[button], (x, y), cg)
+            Quartz.CGEventSetIntegerValueField(ev, Quartz.kCGMouseEventClickState, self._click_state)
+            self._post(ev)
+            self._buttons_down.add(button)
+        else:
+            ev = Quartz.CGEventCreateMouseEvent(None, _UP_TYPE[button], (x, y), cg)
+            Quartz.CGEventSetIntegerValueField(ev, Quartz.kCGMouseEventClickState, self._click_state or 1)
+            self._post(ev)
+            self._buttons_down.discard(button)
+
+    # -------------------------------------------------------------- scroll --
+    def scroll(self, sx: int, sy: int):
+        # Pixel unit for smooth scrolling. wheel1 = vertical, wheel2 = horizontal.
+        ev = Quartz.CGEventCreateScrollWheelEvent(
+            None, Quartz.kCGScrollEventUnitPixel, 2, int(sy), int(sx)
         )
-        Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev)
+        self._post(ev)
 
     # -------------------------------------------------------------- safety --
     def release_all(self):
         """Force-release every held button and modifier. Idempotent + cheap."""
         x, y = self._current_location()
-        for btn, cg in (
-            (0, Quartz.kCGMouseButtonLeft),
-            (1, Quartz.kCGMouseButtonRight),
-            (2, Quartz.kCGMouseButtonCenter),
-        ):
-            up_type = {
-                Quartz.kCGMouseButtonLeft: Quartz.kCGEventLeftMouseUp,
-                Quartz.kCGMouseButtonRight: Quartz.kCGEventRightMouseUp,
-                Quartz.kCGMouseButtonCenter: Quartz.kCGEventOtherMouseUp,
-            }[cg]
-            ev = Quartz.CGEventCreateMouseEvent(None, up_type, (x, y), cg)
-            Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev)
+        for button in (P.BTN_LEFT, P.BTN_RIGHT, P.BTN_MIDDLE):
+            ev = Quartz.CGEventCreateMouseEvent(None, _UP_TYPE[button], (x, y), _BTN_CG[button])
+            self._post(ev)
         self._buttons_down.clear()
         self._mods_down = 0
+        self._click_state = 0

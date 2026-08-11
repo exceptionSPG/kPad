@@ -6,11 +6,22 @@ whole client.
 
 ## Status
 
-**Slice 1 — cursor moves end-to-end.** Trackpad surface on the phone drives the
-Mac cursor with tunable pointer acceleration. A hidden dev panel (append
-`?dev=1` or triple-tap the top-left corner) exposes live sliders for accel `k`,
-cap, deadzone, and scroll multiplier, plus a round-trip latency readout. Clicks,
-scroll, keyboard, pairing, QR, and the menu bar come in later slices.
+**Slice 2 — full pointer + gestures.** On top of the moving cursor:
+
+- one-finger **tap = left click** (two quick taps = double-click, via server
+  click-state); **two-finger tap = right click**
+- **two-finger scroll with inertia** (momentum runs on the phone, so it feels
+  right regardless of Wi-Fi latency)
+- **tap-and-a-half drag lock**: tap, then touch-and-drag holds the button; lift
+  and it stays locked (amber border) until you tap to drop
+- drags emit real *Dragged* events (text selection, window moves work)
+- **release-all safety** on every disconnect path: socket close (server-side)
+  and page-hide / phone-lock (client-side) both force every button up
+
+A hidden dev panel (append `?dev=1` or triple-tap the top-left corner) exposes
+live sliders for accel `k`, cap, deadzone, scroll multiplier, plus a round-trip
+latency readout. Keyboard, voice, clipboard, pairing, QR, and the menu bar come
+in later slices.
 
 ## Run (dev)
 
