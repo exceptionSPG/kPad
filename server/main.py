@@ -92,7 +92,7 @@ def main():
     else:
         server.start_in_thread()
         from .menubar import run_menubar
-        run_menubar(pairing, stats, {"host": host_url, "ip": ip_url}, config.PORT)
+        run_menubar(server, {"host": host_url, "ip": ip_url})
 
 
 if __name__ == "__main__":

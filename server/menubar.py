@@ -25,19 +25,19 @@ AX_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Acces
 
 
 class MenuBarApp(rumps.App):
-    def __init__(self, pairing, stats, urls, port):
+    def __init__(self, server, urls):
         super().__init__("LAN Trackpad", title="🖱", quit_button=None)
-        self.pairing = pairing
-        self.stats = stats
+        self.server = server
+        self.pairing = server.pairing
+        self.stats = server.stats
         self.urls = urls          # {"host": ..., "ip": ...}
-        self.port = port
         self._qr_path = None
 
         self.item_ax = rumps.MenuItem("Accessibility: …", callback=self._grant_ax)
         self.item_status = rumps.MenuItem("Status: waiting for a phone")
         self.menu = [
             rumps.MenuItem(self.urls["host"]),          # display-only (no callback)
-            rumps.MenuItem(f"Pairing code:  {pairing.code}"),
+            rumps.MenuItem(f"Pairing code:  {self.pairing.code}"),
             None,
             rumps.MenuItem("Show QR code", callback=self._show_qr),
             None,
@@ -78,11 +78,14 @@ class MenuBarApp(rumps.App):
         subprocess.Popen(["open", self._qr_path])
 
     def _unpair_all(self, _):
+        # Clear tokens AND drop live connections, so a currently-paired phone is
+        # kicked and forced to re-enter the code (not just future connections).
         self.pairing.tokens.clear()
         try:
             STORE_FILE.unlink()
         except FileNotFoundError:
             pass
+        self.server.disconnect_all()
         try:
             rumps.notification("LAN Trackpad", "Unpaired",
                                "Every phone must enter the code again.")
@@ -90,8 +93,15 @@ class MenuBarApp(rumps.App):
             pass
 
     def _quit(self, _):
+        # Close connections cleanly so phones see an immediate disconnect.
+        try:
+            fut = self.server.disconnect_all()
+            if fut is not None:
+                fut.result(timeout=1)
+        except Exception:
+            pass
         rumps.quit_application()
 
 
-def run_menubar(pairing, stats, urls, port):
-    MenuBarApp(pairing, stats, urls, port).run()
+def run_menubar(server, urls):
+    MenuBarApp(server, urls).run()

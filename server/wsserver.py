@@ -29,6 +29,8 @@ class Server:
         self.host = host
         self.port = port
         self.stats = stats if stats is not None else {"clients": 0}
+        self._clients = set()   # active WebSocketResponse objects
+        self._loop = None       # the server thread's event loop
 
     # ----------------------------------------------------------- handlers --
     async def _index(self, request):
@@ -45,6 +47,7 @@ class Server:
 
         peer = request.remote
         print(f"[ws] connected {peer}")
+        self._clients.add(ws)
         self.stats["clients"] = self.stats.get("clients", 0) + 1
         state = {"paired": False, "attempts": 0}
         try:
@@ -54,11 +57,27 @@ class Server:
                 elif msg.type == web.WSMsgType.ERROR:
                     break
         finally:
+            self._clients.discard(ws)
             self.stats["clients"] = max(0, self.stats.get("clients", 1) - 1)
             # SAFETY INVARIANT: never leave a button/modifier stuck.
             self.inp.release_all()
             print(f"[ws] disconnected {peer} — released all input")
         return ws
+
+    # ----------------------------------------------------------- lifecycle --
+    async def _disconnect_all(self):
+        for ws in list(self._clients):
+            try:
+                await ws.close(code=1001, message=b"unpaired")
+            except Exception:
+                pass
+
+    def disconnect_all(self):
+        """Close every active connection. Callable from another thread (the menu
+        bar). Returns a concurrent.futures.Future, or None if not yet running."""
+        if self._loop is None:
+            return None
+        return asyncio.run_coroutine_threadsafe(self._disconnect_all(), self._loop)
 
     async def _handle(self, data: bytes, ws, state: dict):
         if not data:
@@ -122,6 +141,7 @@ class Server:
         def _run():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+            self._loop = loop
             runner = web.AppRunner(self.build_app())
             loop.run_until_complete(runner.setup())
             site = web.TCPSite(runner, self.host, self.port)
