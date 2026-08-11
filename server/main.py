@@ -6,13 +6,11 @@ server owns the main thread; when rumps is added, the server moves to a
 background thread and rumps takes the main thread.
 """
 
+import os
 import socket
 import sys
 
-from ApplicationServices import (
-    AXIsProcessTrustedWithOptions,
-    kAXTrustedCheckOptionPrompt,
-)
+from ApplicationServices import AXIsProcessTrusted
 
 from . import config
 from .displays import Displays
@@ -27,10 +25,9 @@ def _check_accessibility():
     """Warn loudly if we lack Accessibility permission — without it, every
     CGEventPost silently no-ops and the cursor never moves.
 
-    The prompt=True variant makes macOS surface its grant dialog and add this
-    process's app (e.g. LAN Trackpad.app, or your terminal) to the Accessibility
-    list automatically, so it's one toggle away instead of a manual +."""
-    if AXIsProcessTrustedWithOptions({kAXTrustedCheckOptionPrompt: True}):
+    The menu-bar "Grant Accessibility" item does the interactive prompt on
+    demand; here we only check (no dialog) so repeated launches stay quiet."""
+    if AXIsProcessTrusted():
         return
     print("=" * 68)
     print("  Accessibility permission is NOT granted.")
@@ -72,20 +69,30 @@ def main():
     displays = Displays()
     inp = MacInput(displays)
     pairing = Pairing()
-    server = Server(inp, pairing, config.HOST, config.PORT)
+    stats = {"clients": 0}
+    server = Server(inp, pairing, config.HOST, config.PORT, stats)
 
     host = socket.gethostname()
     if not host.endswith(".local"):
         host += ".local"
     ip = _lan_ip()
+    host_url = f"http://{host}:{config.PORT}/"
+    ip_url = f"http://{ip}:{config.PORT}/"
     print("LAN Trackpad — open on your phone (same Wi-Fi):")
-    print(f"    http://{host}:{config.PORT}/")
-    print(f"    http://{ip}:{config.PORT}/   (if .local doesn't resolve)")
+    print(f"    {host_url}")
+    print(f"    {ip_url}   (if .local doesn't resolve)")
     print()
-    print(f"    Pairing code:  {pairing.code}   (enter it on the phone once)")
-    print("Ctrl-C to stop.\n")
+    print(f"    Pairing code:  {pairing.code}   (or scan the QR from the menu bar)")
+    print("Menu-bar icon 🖱 has the QR, status, and controls.  Ctrl-C to stop.\n")
 
-    server.run()
+    # rumps must own the main thread, so the server runs in a background thread.
+    # LANTRACKPAD_NO_MENUBAR runs it headless on the main thread (dev/testing).
+    if os.environ.get("LANTRACKPAD_NO_MENUBAR"):
+        server.run()
+    else:
+        server.start_in_thread()
+        from .menubar import run_menubar
+        run_menubar(pairing, stats, {"host": host_url, "ip": ip_url}, config.PORT)
 
 
 if __name__ == "__main__":

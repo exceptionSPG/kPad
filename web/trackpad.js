@@ -31,6 +31,7 @@
   const SCROLL_FRICTION = 0.94;
   const SCROLL_MIN_V = 0.15;   // stop inertia below this px/frame
   const LOCK_SAFETY_MS = 6000; // auto-drop a stuck drag-lock
+  const THREE_SWIPE_PX = 55;   // horizontal centroid travel to switch a Space
 
   // ---- move (accelerated, per-rAF batched) ---------------------------------
   const pts = new Map();       // pointerId -> {x0,y0,x,y,t0}
@@ -61,6 +62,8 @@
   let scrolled = false;
   let lastCentroid = null;
   let scrollVX = 0, scrollVY = 0, inertiaRAF = 0;
+  let threeStartCentroid = null; // start of a 3-finger gesture
+  let spaceSwitched = false;     // fired a Space switch this 3-finger gesture
   let lastTap = { t: -1e9, x: 0, y: 0 };
   let halfCandidate = false;   // a touch that may become a drag-lock
   let halfTimer = 0;
@@ -142,6 +145,11 @@
       scrolled = false;
       twoStartCentroid = centroid();
       lastCentroid = twoStartCentroid;
+    } else if (count === 3) {
+      // Three fingers => a Space-switch swipe, not scroll and not a 2-finger tap.
+      twoTapCandidate = false;
+      threeStartCentroid = centroid();
+      spaceSwitched = false;
     }
   });
 
@@ -150,7 +158,21 @@
     if (!p) return;
     const count = pts.size;
 
-    if (count >= 2) {
+    if (count >= 3) {
+      p.x = e.clientX; p.y = e.clientY;
+      if (!threeStartCentroid) threeStartCentroid = centroid();
+      const c = centroid();
+      const dx = c.x - threeStartCentroid.x, dy = c.y - threeStartCentroid.y;
+      // horizontal swipe => macOS "move a space" shortcut (Ctrl+Left/Right)
+      if (!spaceSwitched && Math.abs(dx) > THREE_SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+        // swipe left (fingers move left) -> next Space (right); swipe right -> previous
+        NET.key(dx < 0 ? KVK.ArrowRight : KVK.ArrowLeft, PROTO.MOD_CONTROL);
+        spaceSwitched = true;
+      }
+      return;
+    }
+
+    if (count === 2) {
       p.x = e.clientX; p.y = e.clientY;
       const c = centroid();
       const cdx = c.x - lastCentroid.x, cdy = c.y - lastCentroid.y;
@@ -218,6 +240,8 @@
       twoTapCandidate = false;
       scrolled = false;
       twoStartCentroid = null;
+      threeStartCentroid = null;
+      spaceSwitched = false;
       if (mode === "scroll") mode = "idle";
       pad.classList.remove("active");
     }
@@ -234,7 +258,8 @@
     pts.clear();
     mode = "idle";
     moved = twoFingerActive = twoTapCandidate = scrolled = false;
-    halfCandidate = pendingLockTouch = false;
+    halfCandidate = pendingLockTouch = spaceSwitched = false;
+    threeStartCentroid = null;
     scrollVX = scrollVY = 0;
     pad.classList.remove("active", "dragging", "locked");
   }

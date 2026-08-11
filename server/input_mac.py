@@ -41,6 +41,23 @@ _DRAG_TYPE = {
     P.BTN_MIDDLE: Quartz.kCGEventOtherMouseDragged,
 }
 
+# MOD_* bitmask -> CGEvent flag mask.
+_MOD_FLAG = {
+    P.MOD_SHIFT: Quartz.kCGEventFlagMaskShift,
+    P.MOD_CONTROL: Quartz.kCGEventFlagMaskControl,
+    P.MOD_OPTION: Quartz.kCGEventFlagMaskAlternate,
+    P.MOD_COMMAND: Quartz.kCGEventFlagMaskCommand,
+    P.MOD_FN: Quartz.kCGEventFlagMaskSecondaryFn,
+}
+
+
+def _cg_flags(modifiers: int) -> int:
+    flags = 0
+    for bit, flag in _MOD_FLAG.items():
+        if modifiers & bit:
+            flags |= flag
+    return flags
+
 
 class MacInput:
     def __init__(self, displays: Displays):
@@ -100,6 +117,18 @@ class MacInput:
             Quartz.CGEventSetIntegerValueField(ev, Quartz.kCGMouseEventClickState, self._click_state or 1)
             self._post(ev)
             self._buttons_down.discard(button)
+
+    # ----------------------------------------------------------------- key --
+    def key(self, keycode: int, modifiers: int):
+        """Tap a key (down+up) with modifier flags set on the event. Self-
+        contained, so no modifier can get stuck from a combo. `keycode` is a
+        macOS virtual keycode (kVK_*); `modifiers` is a MOD_* bitmask."""
+        flags = _cg_flags(modifiers)
+        for is_down in (True, False):
+            ev = Quartz.CGEventCreateKeyboardEvent(None, keycode, is_down)
+            if flags:
+                Quartz.CGEventSetFlags(ev, flags)
+            self._post(ev)
 
     # -------------------------------------------------------------- scroll --
     def scroll(self, sx: int, sy: int):

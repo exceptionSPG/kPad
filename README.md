@@ -6,6 +6,16 @@ whole client.
 
 ## Status
 
+**Slice 4 — menu bar + QR + Spaces gesture.** A menu-bar icon (🖱) shows the
+connect URL, the pairing code, connected-phone count, and a live Accessibility
+status with a one-click Grant button; "Show QR code" opens a QR encoding the URL
++ code so the phone scans straight onto the paired trackpad; "Unpair all phones"
+clears the token store. The server now runs in a background thread so rumps owns
+the main thread (set `LANTRACKPAD_NO_MENUBAR=1` to run headless). New gesture:
+**three-finger horizontal swipe switches Desktops/Spaces** (mapped to macOS's
+⌃←/⌃→). This introduced the `key` opcode (0x11) and `web/keymap.js`, the single
+JS-name → kVK_ table the keyboard slice builds on.
+
 **Slice 2 — full pointer + gestures.** On top of the moving cursor:
 
 - one-finger **tap = left click** (two quick taps = double-click, via server

@@ -5,7 +5,9 @@ Slice 1 scope: serve web/, accept a WebSocket, apply pointer moves, answer ping.
 No pairing yet (added in the pairing slice) — any LAN client is accepted.
 """
 
+import asyncio
 import socket
+import threading
 from pathlib import Path
 
 from aiohttp import web
@@ -21,11 +23,12 @@ MAX_PAIR_ATTEMPTS = 5
 
 
 class Server:
-    def __init__(self, inp: MacInput, pairing: Pairing, host: str, port: int):
+    def __init__(self, inp: MacInput, pairing: Pairing, host: str, port: int, stats=None):
         self.inp = inp
         self.pairing = pairing
         self.host = host
         self.port = port
+        self.stats = stats if stats is not None else {"clients": 0}
 
     # ----------------------------------------------------------- handlers --
     async def _index(self, request):
@@ -42,6 +45,7 @@ class Server:
 
         peer = request.remote
         print(f"[ws] connected {peer}")
+        self.stats["clients"] = self.stats.get("clients", 0) + 1
         state = {"paired": False, "attempts": 0}
         try:
             async for msg in ws:
@@ -50,6 +54,7 @@ class Server:
                 elif msg.type == web.WSMsgType.ERROR:
                     break
         finally:
+            self.stats["clients"] = max(0, self.stats.get("clients", 1) - 1)
             # SAFETY INVARIANT: never leave a button/modifier stuck.
             self.inp.release_all()
             print(f"[ws] disconnected {peer} — released all input")
@@ -90,6 +95,9 @@ class Server:
         elif op == P.OP_SCROLL:
             sx, sy = P.read_scroll(data)
             self.inp.scroll(sx, sy)
+        elif op == P.OP_KEY:
+            keycode, modifiers = P.read_key(data)
+            self.inp.key(keycode, modifiers)
         elif op == P.OP_PING:
             await ws.send_bytes(P.frame_pong(P.read_u32(data)))
         # Keyboard/clipboard opcodes arrive in later slices.
@@ -103,4 +111,25 @@ class Server:
         return app
 
     def run(self):
+        """Blocking run on the current thread (headless / no menu bar)."""
         web.run_app(self.build_app(), host=self.host, port=self.port, print=None)
+
+    def start_in_thread(self):
+        """Run the server on its own event loop in a daemon thread, so the main
+        thread is free for rumps/AppKit. Returns once the socket is listening."""
+        ready = threading.Event()
+
+        def _run():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            runner = web.AppRunner(self.build_app())
+            loop.run_until_complete(runner.setup())
+            site = web.TCPSite(runner, self.host, self.port)
+            loop.run_until_complete(site.start())
+            ready.set()
+            loop.run_forever()
+
+        t = threading.Thread(target=_run, name="lan-trackpad-server", daemon=True)
+        t.start()
+        ready.wait(5)
+        return t
