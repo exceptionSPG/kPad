@@ -3,7 +3,7 @@ VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: run proto venv clean
+.PHONY: run proto venv app clean
 
 # Start the server (regenerates the client protocol mirror first).
 run: venv proto
@@ -21,5 +21,9 @@ $(VENV)/.stamp: requirements.txt
 	$(PIP) install -q -r requirements.txt
 	@touch $(VENV)/.stamp
 
+# Build a dev LAN Trackpad.app to grant Accessibility to (see scripts/make_app.sh).
+app: venv proto
+	bash scripts/make_app.sh
+
 clean:
-	rm -rf $(VENV) web/protocol.js
+	rm -rf $(VENV) web/protocol.js dist

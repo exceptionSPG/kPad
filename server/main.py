@@ -9,7 +9,10 @@ background thread and rumps takes the main thread.
 import socket
 import sys
 
-from ApplicationServices import AXIsProcessTrusted
+from ApplicationServices import (
+    AXIsProcessTrustedWithOptions,
+    kAXTrustedCheckOptionPrompt,
+)
 
 from . import config
 from .displays import Displays
@@ -21,8 +24,12 @@ AX_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Acces
 
 def _check_accessibility():
     """Warn loudly if we lack Accessibility permission — without it, every
-    CGEventPost silently no-ops and the cursor never moves."""
-    if AXIsProcessTrusted():
+    CGEventPost silently no-ops and the cursor never moves.
+
+    The prompt=True variant makes macOS surface its grant dialog and add this
+    process's app (e.g. LAN Trackpad.app, or your terminal) to the Accessibility
+    list automatically, so it's one toggle away instead of a manual +."""
+    if AXIsProcessTrustedWithOptions({kAXTrustedCheckOptionPrompt: True}):
         return
     print("=" * 68)
     print("  Accessibility permission is NOT granted.")
