@@ -18,10 +18,17 @@ whole client.
 - **release-all safety** on every disconnect path: socket close (server-side)
   and page-hide / phone-lock (client-side) both force every button up
 
+**Pairing (Slice 3).** The Mac prints a fresh 6-digit code on launch; the phone
+enters it once. On success the Mac issues a long-lived token the phone stores, so
+it never re-prompts (reconnects re-pair silently). Unpaired clients can't drive
+input — enforced server-side. Wrong codes keep the socket open to retry (error
+stays visible), capped at 5 tries per connection. Tokens live in
+`~/.lantrackpad/tokens.json` (0600); delete it to un-pair every phone.
+
 A hidden dev panel (append `?dev=1` or triple-tap the top-left corner) exposes
 live sliders for accel `k`, cap, deadzone, scroll multiplier, plus a round-trip
-latency readout. Keyboard, voice, clipboard, pairing, QR, and the menu bar come
-in later slices.
+latency readout. Keyboard, voice, clipboard, QR, and the menu bar come in later
+slices.
 
 ## Run (dev)
 

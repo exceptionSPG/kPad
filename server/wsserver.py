@@ -12,13 +12,18 @@ from aiohttp import web
 
 from . import protocol as P
 from .input_mac import MacInput
+from .pairing import Pairing
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
+# Wrong-code guesses tolerated per connection before we drop it.
+MAX_PAIR_ATTEMPTS = 5
+
 
 class Server:
-    def __init__(self, inp: MacInput, host: str, port: int):
+    def __init__(self, inp: MacInput, pairing: Pairing, host: str, port: int):
         self.inp = inp
+        self.pairing = pairing
         self.host = host
         self.port = port
 
@@ -37,10 +42,11 @@ class Server:
 
         peer = request.remote
         print(f"[ws] connected {peer}")
+        state = {"paired": False, "attempts": 0}
         try:
             async for msg in ws:
                 if msg.type == web.WSMsgType.BINARY:
-                    await self._handle(msg.data, ws)
+                    await self._handle(msg.data, ws, state)
                 elif msg.type == web.WSMsgType.ERROR:
                     break
         finally:
@@ -49,10 +55,32 @@ class Server:
             print(f"[ws] disconnected {peer} — released all input")
         return ws
 
-    async def _handle(self, data: bytes, ws):
+    async def _handle(self, data: bytes, ws, state: dict):
         if not data:
             return
         op = P.opcode(data)
+
+        # Until paired, the ONLY things we honour are the pairing handshake and
+        # the latency probe. Every input opcode is ignored — enforcement.
+        if not state["paired"]:
+            if op == P.OP_PAIR:
+                presented = P.payload(data).decode("utf-8", "replace")
+                ok, token = self.pairing.verify(presented)
+                await ws.send_bytes(P.frame_pair_result(ok, token or ""))
+                if ok:
+                    state["paired"] = True
+                    print("[ws] paired")
+                else:
+                    # Keep the socket open so the user can just retry (the error
+                    # message stays put), but cap attempts to bound brute force.
+                    state["attempts"] += 1
+                    if state["attempts"] >= MAX_PAIR_ATTEMPTS:
+                        await ws.close()
+                return
+            if op == P.OP_PING:
+                await ws.send_bytes(P.frame_pong(P.read_u32(data)))
+            return  # ignore anything else while unpaired
+
         if op == P.OP_MOVE:
             dx, dy = P.read_move(data)
             self.inp.move(dx, dy)
@@ -63,8 +91,7 @@ class Server:
             sx, sy = P.read_scroll(data)
             self.inp.scroll(sx, sy)
         elif op == P.OP_PING:
-            seq = P.read_u32(data)
-            await ws.send_bytes(P.frame_pong(seq))
+            await ws.send_bytes(P.frame_pong(P.read_u32(data)))
         # Keyboard/clipboard opcodes arrive in later slices.
 
     # --------------------------------------------------------------- run ----

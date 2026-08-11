@@ -18,6 +18,18 @@
 
   <main id="pad" aria-label="trackpad surface"></main>
 
+  <!-- Pairing overlay: shown first-time or if the Mac no longer knows this phone -->
+  <section id="pair" class="hidden">
+    <div class="pairBox">
+      <h1>Pair with your Mac</h1>
+      <p id="pairMsg">Enter the 6-digit code shown on your Mac.</p>
+      <input id="pairCode" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+             autocomplete="one-time-code" placeholder="000000">
+      <button id="pairBtn">Connect</button>
+      <p id="pairErr" class="pairErr"></p>
+    </div>
+  </section>
+
   <!-- Dev tuning panel: ?dev=1 or triple-tap the top-left corner -->
   <section id="dev" class="hidden">
     <div class="devRow"><label>accel k</label>

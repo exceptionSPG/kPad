@@ -63,6 +63,48 @@ html, body {
   background: #221d16;
 }
 
+/* Pairing overlay */
+#pair {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+#pair.hidden { display: none; }
+.pairBox { width: 100%; max-width: 320px; text-align: center; }
+.pairBox h1 { font-size: 22px; margin: 0 0 6px; }
+.pairBox p { color: var(--muted); margin: 0 0 18px; }
+#pairCode {
+  width: 100%;
+  font-size: 34px;
+  letter-spacing: 12px;
+  text-align: center;
+  padding: 14px 0;
+  border-radius: 12px;
+  border: 1px solid #2a2f42;
+  background: #12141d;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+#pairCode:focus { outline: none; border-color: var(--ok); }
+#pairBtn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 14px;
+  font-size: 17px;
+  border: none;
+  border-radius: 12px;
+  background: var(--ok);
+  color: #06210f;
+  font-weight: 600;
+}
+#pairBtn:active { filter: brightness(0.92); }
+.pairErr { color: var(--bad) !important; min-height: 18px; margin-top: 12px !important; }
+
 /* Dev tuning panel */
 #dev {
   position: absolute;

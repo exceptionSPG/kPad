@@ -17,6 +17,7 @@ from ApplicationServices import (
 from . import config
 from .displays import Displays
 from .input_mac import MacInput
+from .pairing import Pairing
 from .wsserver import Server
 
 AX_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
@@ -59,11 +60,19 @@ def main():
     if sys.platform != "darwin":
         sys.exit("LAN Trackpad server only runs on macOS.")
 
+    # Line-buffer stdout so startup info (URLs, pairing code) shows immediately —
+    # important when running as a long-lived process or logging to a file (.app).
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass
+
     _check_accessibility()
 
     displays = Displays()
     inp = MacInput(displays)
-    server = Server(inp, config.HOST, config.PORT)
+    pairing = Pairing()
+    server = Server(inp, pairing, config.HOST, config.PORT)
 
     host = socket.gethostname()
     if not host.endswith(".local"):
@@ -72,6 +81,8 @@ def main():
     print("LAN Trackpad — open on your phone (same Wi-Fi):")
     print(f"    http://{host}:{config.PORT}/")
     print(f"    http://{ip}:{config.PORT}/   (if .local doesn't resolve)")
+    print()
+    print(f"    Pairing code:  {pairing.code}   (enter it on the phone once)")
     print("Ctrl-C to stop.\n")
 
     server.run()
