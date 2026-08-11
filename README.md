@@ -27,9 +27,12 @@ Wi-Fi. (If `.local` doesn't resolve, use the printed IP URL.)
 
 ## Tuning the cursor feel
 
-Open the dev panel on the phone, adjust the sliders until it feels right (values
-persist in `localStorage`), then tap **copy config** and paste the JSON into
-`DEFAULT_POINTER` in `server/config.py` to make it the new default.
+Pointer feel is owned by the client — a permanent per-user feature, not a
+build-time setting. Open the dev panel on the phone (`?dev=1` or triple-tap the
+top-left corner) and adjust the sliders until it feels right; each phone persists
+its own curve in `localStorage`. **copy config** dumps the JSON so you can back
+up a good curve or seed a fresh phone's first-run defaults (in `web/app.js`
+`DEFAULTS`).
 
 ## Layout
 

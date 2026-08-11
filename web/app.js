@@ -5,7 +5,9 @@
 (function () {
   "use strict";
 
-  // ---- tuning store (mirrors server/config.py DEFAULT_POINTER) -------------
+  // ---- tuning store — the single source of pointer-feel defaults ----------
+  // Each phone persists its own tuned curve in localStorage; these are only the
+  // values a brand-new phone starts from. There is no server-side copy.
   const DEFAULTS = { k: 0.08, cap: 3.0, deadzone: 0.4, scrollMult: 1.0 };
   const TUNE = Object.assign({}, DEFAULTS);
   try {
