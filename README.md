@@ -40,6 +40,32 @@ live sliders for accel `k`, cap, deadzone, scroll multiplier, plus a round-trip
 latency readout. Keyboard, voice, clipboard, QR, and the menu bar come in later
 slices.
 
+## Install as an app (recommended)
+
+Build a self-contained `LAN Trackpad.app` + `.dmg` you can keep in
+`/Applications` instead of running `make run` each time:
+
+```bash
+make dmg
+```
+
+Then open `dist/LAN-Trackpad.dmg`, drag **LAN Trackpad** to Applications, and
+launch it — it lives in the menu bar (🖱). Grant it Accessibility once
+(the menu's "Grant Accessibility" item, or System Settings › Privacy & Security
+› Accessibility). The bundle is self-contained (its own Python + deps); it does
+not need this repo or the venv to run.
+
+**Always-on:** System Settings › General › Login Items › **+** › add
+*LAN Trackpad*. Now it starts with your Mac and is always in the menu bar.
+
+**Gatekeeper:** the local build is ad-hoc signed (no Apple Developer account
+needed). If macOS blocks the first launch, right-click the app › Open once, or:
+`xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`. For real
+distribution, set `CODESIGN_IDENTITY` (a Developer ID) and `NOTARY_PROFILE` and
+re-run — `scripts/build.sh` will Developer ID-sign and notarize instead. Note:
+each ad-hoc rebuild changes the app's identity, so Accessibility must be
+re-granted after a rebuild; a Developer ID signature keeps it stable.
+
 ## Run (dev)
 
 ```bash

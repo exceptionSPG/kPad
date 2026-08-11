@@ -4,7 +4,6 @@ __pycache__/
 .DS_Store
 build/
 dist/
-*.spec
 # generated from server/protocol.py via `make proto`
 web/protocol.js
 # local token store

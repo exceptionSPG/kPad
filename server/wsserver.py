@@ -7,6 +7,7 @@ No pairing yet (added in the pairing slice) — any LAN client is accepted.
 
 import asyncio
 import socket
+import sys
 import threading
 from pathlib import Path
 
@@ -16,7 +17,11 @@ from . import protocol as P
 from .input_mac import MacInput
 from .pairing import Pairing
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+# In a PyInstaller bundle the web assets are unpacked under sys._MEIPASS.
+if getattr(sys, "frozen", False):
+    WEB_DIR = Path(sys._MEIPASS) / "web"
+else:
+    WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 # Wrong-code guesses tolerated per connection before we drop it.
 MAX_PAIR_ATTEMPTS = 5

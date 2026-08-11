@@ -25,5 +25,9 @@ $(VENV)/.stamp: requirements.txt
 app: venv proto
 	bash scripts/make_app.sh
 
+# Build a self-contained, installable LAN Trackpad.app + .dmg (PyInstaller).
+dmg: venv proto
+	bash scripts/build.sh
+
 clean:
 	rm -rf $(VENV) web/protocol.js dist
