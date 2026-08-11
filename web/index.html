@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>LAN Trackpad</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="status">
+    <span id="dot" class="dot"></span>
+    <span id="statusText">connecting…</span>
+    <span id="rtt" class="rtt"></span>
+  </header>
+
+  <main id="pad" aria-label="trackpad surface"></main>
+
+  <!-- Dev tuning panel: ?dev=1 or triple-tap the top-left corner -->
+  <section id="dev" class="hidden">
+    <div class="devRow"><label>accel k</label>
+      <input id="k" type="range" min="0" max="0.4" step="0.005"><output id="kOut"></output></div>
+    <div class="devRow"><label>cap</label>
+      <input id="cap" type="range" min="0" max="8" step="0.1"><output id="capOut"></output></div>
+    <div class="devRow"><label>deadzone</label>
+      <input id="deadzone" type="range" min="0" max="3" step="0.1"><output id="deadzoneOut"></output></div>
+    <div class="devRow"><label>scroll×</label>
+      <input id="scrollMult" type="range" min="0.2" max="4" step="0.1"><output id="scrollMultOut"></output></div>
+    <div class="devRow devInfo"><span id="devRtt">rtt —</span></div>
+    <div class="devRow devBtns">
+      <button id="copyCfg">copy config</button>
+      <button id="closeDev">close</button>
+    </div>
+  </section>
+
+  <!-- Generated from server/protocol.py by `make proto`; loaded first. -->
+  <script src="protocol.js"></script>
+  <script src="app.js"></script>
+  <script src="trackpad.js"></script>
+</body>
+</html>

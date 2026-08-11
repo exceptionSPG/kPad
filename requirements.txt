@@ -1,0 +1,14 @@
+# LAN Trackpad — Mac side. Python 3.12.
+# HTTP + WebSocket on one port.
+aiohttp>=3.9
+
+# QR code generation (pure-Python, no Pillow/C deps -> clean PyInstaller bundle).
+segno>=1.6
+
+# Menu-bar UI (added in the menu-bar slice; installed now so the env is stable).
+rumps>=0.4
+
+# Input synthesis + Accessibility check + clipboard (NSPasteboard).
+pyobjc-framework-Quartz>=10
+pyobjc-framework-Cocoa>=10
+pyobjc-framework-ApplicationServices>=10

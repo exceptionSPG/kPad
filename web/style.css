@@ -1,0 +1,80 @@
+/* LAN Trackpad — phone side. No secure context here (http://*.local), so no
+   fancy APIs; just a solid full-bleed surface that never rubber-bands or zooms. */
+
+:root {
+  --bg: #0e0f13;
+  --pad: #171922;
+  --pad-active: #1e2130;
+  --fg: #e7e9ee;
+  --muted: #8b90a0;
+  --ok: #35c46a;
+  --bad: #e0533d;
+  --warn: #e0a93d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;                 /* no rubber-banding */
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.3 -apple-system, system-ui, sans-serif;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#status {
+  height: env(safe-area-inset-top, 0);
+  min-height: 44px;
+  padding: max(env(safe-area-inset-top), 8px) 14px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); flex: none; }
+.dot.ok  { background: var(--ok); }
+.dot.bad { background: var(--bad); }
+.rtt { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+#pad {
+  position: absolute;
+  left: 0; right: 0;
+  top: 52px; bottom: 0;
+  background: var(--pad);
+  touch-action: none;               /* we handle all gestures ourselves */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#pad.active { background: var(--pad-active); }
+
+/* Dev tuning panel */
+#dev {
+  position: absolute;
+  left: 12px; right: 12px; bottom: 12px;
+  background: #10121b;
+  border: 1px solid #262a3a;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.5);
+}
+#dev.hidden { display: none; }
+.devRow { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.devRow label { width: 74px; color: var(--muted); font-size: 13px; }
+.devRow input[type=range] { flex: 1; }
+.devRow output { width: 46px; text-align: right; font-variant-numeric: tabular-nums; color: var(--fg); }
+.devInfo { color: var(--muted); font-variant-numeric: tabular-nums; }
+.devBtns { justify-content: flex-end; gap: 8px; }
+.devBtns button {
+  background: #232739; color: var(--fg); border: none;
+  border-radius: 9px; padding: 8px 14px; font-size: 14px;
+}
+.devBtns button:active { background: #2e3350; }

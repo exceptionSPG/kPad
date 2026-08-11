@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+build/
+dist/
+*.spec
+# generated from server/protocol.py via `make proto`
+web/protocol.js
+# local token store
+.lantrackpad/
