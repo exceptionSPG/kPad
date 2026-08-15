@@ -39,7 +39,13 @@ codesign --verify --deep --strict "$APP" && echo "    signature verifies"
 
 echo "==> Creating $DMG"
 rm -f "$DMG"
-hdiutil create -volname "kPad" -srcfolder "$APP" -ov -format UDZO "$DMG" >/dev/null
+# Stage the app next to an /Applications alias so the DMG window offers the
+# familiar drag-to-install layout.
+STAGE="$(mktemp -d)"
+cp -R "$APP" "$STAGE/"
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -volname "kPad" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+rm -rf "$STAGE"
 
 # Optional: notarize + staple (needs a real Developer ID identity + notary profile).
 if [ -n "${NOTARY_PROFILE:-}" ] && [ "$IDENTITY" != "-" ]; then
@@ -57,7 +63,7 @@ echo "Done:"
 echo "  App: $APP"
 echo "  DMG: $DMG"
 echo ""
-echo "Install: open the .dmg and drag kPad to Applications, then grant"
-echo "Accessibility to it once. Ad-hoc builds are unsigned to Gatekeeper — if"
-echo "macOS blocks the first launch, right-click the app > Open, or run:"
+echo "Install: open the .dmg and drag kPad onto Applications, then grant"
+echo "Accessibility once. A downloaded ad-hoc build is blocked by Gatekeeper —"
+echo "open it via System Settings > Privacy & Security > Open Anyway, or run:"
 echo "  xattr -dr com.apple.quarantine \"/Applications/kPad.app\""

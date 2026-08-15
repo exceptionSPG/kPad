@@ -59,16 +59,19 @@ deliberately smaller:
 ## Quick start
 
 1. **Install the Mac app.** Grab the latest `kPad.dmg` from
-   [Releases](../../releases), drag **kPad** to Applications, and launch it — it
-   lives in the menu bar. *(Or run from source — see [Development](#development).)*
+   [Releases](../../releases), open it, and drag **kPad** onto **Applications**.
+   Launch it — it lives in the menu bar. *(Or run from source — see
+   [Development](#development).)*
 2. **Grant Accessibility** once (the menu's "Grant Accessibility" item). macOS
    requires this to move the cursor and type.
 3. **On your phone** (same Wi-Fi): open the menu's **Show QR code** and scan it,
    or type the shown URL. Enter the 6-digit code the first time — that's it.
 
-> First launch blocked by Gatekeeper? The public build is ad-hoc signed (no paid
-> Apple account). Right-click the app → **Open** once, or run
-> `xattr -dr com.apple.quarantine "/Applications/kPad.app"`.
+> **First launch blocked?** The build is ad-hoc signed (free & open-source, not
+> notarized), so macOS says *"Apple could not verify…"*. Open it via **System
+> Settings → Privacy & Security →** scroll down **→ Open Anyway**, or run
+> `xattr -dr com.apple.quarantine "/Applications/kPad.app"`. (Building locally
+> with `make dmg` isn't quarantined, so it opens without this.)
 
 **Always-on:** System Settings → General → Login Items → add **kPad**.
 

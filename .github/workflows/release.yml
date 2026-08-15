@@ -41,6 +41,11 @@ jobs:
           files: dist/kPad.dmg
           generate_release_notes: true
           body: |
-            Local build is ad-hoc signed (no paid Apple account). If macOS blocks
-            first launch: right-click the app → Open, or
-            `xattr -dr com.apple.quarantine "/Applications/kPad.app"`.
+            **Install:** open `kPad.dmg`, drag **kPad** onto **Applications**,
+            launch it, and grant Accessibility once (menu → Grant Accessibility).
+
+            This build is ad-hoc signed (free & open-source, not notarized), so
+            macOS blocks it on first launch with *"Apple could not verify…"*.
+            To open it:
+            - **System Settings → Privacy & Security →** scroll down **→ Open Anyway**, or
+            - Terminal: `xattr -dr com.apple.quarantine "/Applications/kPad.app"`
