@@ -63,20 +63,21 @@ html, body {
   background: #221d16;
 }
 
-/* Keyboard toggle in the header */
-#kbdToggle {
-  margin-left: 10px;
+/* Header toggle buttons (media / clipboard / keyboard) */
+.barBtn {
+  margin-left: 8px;
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 20px;
-  padding: 2px 6px;
+  font-size: 19px;
+  padding: 2px 4px;
   line-height: 1;
 }
-#kbdToggle.on { color: var(--ok); }
+.barBtn.on { filter: none; opacity: 1; }
+.barBtn.on { color: var(--ok); }
 
-/* Keyboard panel (overlays the pad; native OS keyboard appears below it) */
-#kbd {
+/* Panels overlay the pad; the native OS keyboard appears below the kbd panel */
+.panel {
   position: absolute;
   left: 0; right: 0;
   top: 52px; bottom: 0;
@@ -86,8 +87,45 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
 }
-#kbd.hidden { display: none; }
+.panel.hidden { display: none; }
+
+/* Media panel */
+.mediaRow { display: flex; gap: 10px; }
+.mediaRow button {
+  flex: 1;
+  border: 1px solid #2a2f42;
+  border-radius: 12px;
+  background: var(--pad);
+  color: var(--fg);
+  font-size: 24px;
+  padding: 18px 0;
+}
+.mediaRow button:active { background: var(--pad-active); }
+
+/* Clipboard panel */
+.clipSec { display: flex; flex-direction: column; gap: 8px; }
+.clipSec label { color: var(--muted); font-size: 13px; }
+.clipSec textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  border-radius: 10px;
+  border: 1px solid #2a2f42;
+  background: #12141d;
+  color: var(--fg);
+  resize: none;
+  font-family: inherit;
+}
+.clipSec textarea:focus { outline: none; border-color: var(--ok); }
+.clipSec button {
+  align-self: flex-start;
+  border: none; border-radius: 10px; padding: 10px 16px;
+  background: var(--ok); color: #06210f; font-size: 15px; font-weight: 600;
+}
+.clipSec button:active { filter: brightness(0.92); }
 .kbdBar { display: flex; gap: 8px; }
 #kbdInput {
   flex: 1;

@@ -65,6 +65,16 @@
     b.set(bytes, 1);
     return b.buffer;
   }
+  function frameMedia(id) {
+    return new Uint8Array([PROTO.OP_MEDIA, id & 0xff]).buffer;
+  }
+  function frameClipboard(str) {
+    const bytes = new TextEncoder().encode(str);
+    const b = new Uint8Array(1 + bytes.length);
+    b[0] = PROTO.OP_CLIPBOARD_SET;
+    b.set(bytes, 1);
+    return b.buffer;
+  }
   function framePair(str) {
     const bytes = new TextEncoder().encode(str);
     const b = new Uint8Array(1 + bytes.length);
@@ -186,8 +196,12 @@
           rttEMA = rttEMA == null ? rtt : rttEMA * 0.8 + rtt * 0.2;
           showRtt();
         }
+        return;
       }
-      // Other server->client opcodes handled in later slices.
+      if (op === PROTO.OP_CLIPBOARD_SET) {
+        const text = new TextDecoder().decode(new Uint8Array(ev.data, 1));
+        window.dispatchEvent(new CustomEvent("mac-clipboard", { detail: text }));
+      }
     };
     ws.onclose = function () {
       setStatus("disconnected", "bad");
@@ -226,6 +240,8 @@
     scroll: (sx, sy) => { if (paired) send(frameScroll(sx, sy)); },
     key: (keycode, modifiers) => { if (paired) send(frameKey(keycode, modifiers)); },
     text: (str) => { if (paired && str) send(frameText(str)); },
+    media: (id) => { if (paired) send(frameMedia(id)); },
+    clipboard: (str) => { if (paired && str) send(frameClipboard(str)); },
     // Safety: let go of every button (used on page-hide / phone-lock, when the
     // socket may still be open so the server's own release_all hasn't fired).
     releaseButtons: () => {

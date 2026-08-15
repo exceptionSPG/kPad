@@ -14,13 +14,51 @@
     <span id="dot" class="dot"></span>
     <span id="statusText">connecting…</span>
     <span id="rtt" class="rtt"></span>
-    <button id="kbdToggle" aria-label="keyboard">⌨</button>
+    <button id="mediaToggle" class="barBtn" aria-label="media keys">🎵</button>
+    <button id="clipToggle" class="barBtn" aria-label="clipboard">📋</button>
+    <button id="kbdToggle" class="barBtn" aria-label="keyboard">⌨</button>
   </header>
 
   <main id="pad" aria-label="trackpad surface"></main>
 
+  <!-- Media / volume / brightness keys -->
+  <section id="media" class="panel hidden">
+    <div class="mediaRow">
+      <button data-media="MEDIA_PREV">⏮</button>
+      <button data-media="MEDIA_PLAY_PAUSE">⏯</button>
+      <button data-media="MEDIA_NEXT">⏭</button>
+    </div>
+    <div class="mediaRow">
+      <button data-media="MEDIA_VOL_DOWN">🔉</button>
+      <button data-media="MEDIA_VOL_UP">🔊</button>
+      <button data-media="MEDIA_MUTE">🔇</button>
+    </div>
+    <div class="mediaRow">
+      <button data-media="MEDIA_BRIGHT_DOWN">🔅</button>
+      <button data-media="MEDIA_BRIGHT_UP">🔆</button>
+    </div>
+    <button id="mediaDone" class="kbdDone">Done</button>
+  </section>
+
+  <!-- Clipboard sync (both directions) -->
+  <section id="clip" class="panel hidden">
+    <div class="clipSec">
+      <label>Mac clipboard</label>
+      <textarea id="clipFromMac" rows="3" readonly
+                placeholder="(the Mac's clipboard appears here)"></textarea>
+      <button id="clipCopy">Copy to phone</button>
+    </div>
+    <div class="clipSec">
+      <label>Send to Mac</label>
+      <textarea id="clipToMac" rows="3"
+                placeholder="Paste or type here, then Send — sets the Mac's clipboard"></textarea>
+      <button id="clipSend">Send to Mac</button>
+    </div>
+    <button id="clipDone" class="kbdDone">Done</button>
+  </section>
+
   <!-- Keyboard panel: text + native dictation + special keys + sticky modifiers -->
-  <section id="kbd" class="hidden">
+  <section id="kbd" class="panel hidden">
     <div class="kbdBar">
       <textarea id="kbdInput" rows="2" autocapitalize="off" autocomplete="off"
                 autocorrect="off" spellcheck="false" inputmode="text"
@@ -81,5 +119,7 @@
   <script src="app.js"></script>
   <script src="trackpad.js"></script>
   <script src="keyboard.js"></script>
+  <script src="clipboard.js"></script>
+  <script src="media.js"></script>
 </body>
 </html>

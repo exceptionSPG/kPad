@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from server import protocol as P  # noqa: E402
 
-PREFIXES = ("OP_", "MOD_", "BTN_")
+PREFIXES = ("OP_", "MOD_", "BTN_", "MEDIA_")
 OUT = ROOT / "web" / "protocol.js"
 
 

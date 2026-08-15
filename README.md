@@ -6,6 +6,15 @@ whole client.
 
 ## Status
 
+**Slice 6 — clipboard sync + media keys.** A 📋 panel syncs the clipboard both
+ways: the Mac's clipboard is pushed to the phone live (NSPasteboard polled every
+500ms, and on pairing), with a Copy button; phone→Mac is a paste-and-Send field
+(no async Clipboard API on http://*.local, so the push direction is manual). A
+🎵 panel sends play/pause, prev/next, volume ±, mute, and brightness ± as macOS
+system keys (NSSystemDefined events). New opcode `OP_MEDIA` (0x12);
+`OP_CLIPBOARD_SET` (0x20) now flows both directions and syncs across multiple
+paired phones. This is the last Phase 1 functional slice.
+
 **Slice 5 — keyboard + voice + modifiers.** A ⌨ toggle opens a keyboard panel:
 a native text field (so the phone's own keyboard — and its 🎤 dictation button —
 drive it) streams typing/dictation as unicode text (`OP_TEXT`), a row of special

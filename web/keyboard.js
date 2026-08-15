@@ -38,11 +38,14 @@
   function isOpen() { return !kbd.classList.contains("hidden"); }
   function resetBuffer() { input.value = ""; prev = ""; }
   function open() {
+    window.dispatchEvent(new CustomEvent("panel-open", { detail: "kbd" }));
     kbd.classList.remove("hidden");
     toggle.classList.add("on");
     resetBuffer();
     setTimeout(() => input.focus(), 20);
   }
+  // Close if another panel opens (panels are mutually exclusive).
+  window.addEventListener("panel-open", (e) => { if (e.detail !== "kbd" && isOpen()) close(); });
   function close() {
     clearMods();
     input.blur();

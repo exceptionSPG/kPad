@@ -28,13 +28,16 @@ MAX_PAIR_ATTEMPTS = 5
 
 
 class Server:
-    def __init__(self, inp: MacInput, pairing: Pairing, host: str, port: int, stats=None):
+    def __init__(self, inp: MacInput, pairing: Pairing, host: str, port: int,
+                 stats=None, clipboard=None):
         self.inp = inp
         self.pairing = pairing
+        self.clipboard = clipboard
         self.host = host
         self.port = port
         self.stats = stats if stats is not None else {"clients": 0}
         self._clients = set()   # active WebSocketResponse objects
+        self._paired = set()    # paired connections (clipboard broadcast targets)
         self._loop = None       # the server thread's event loop
 
     # ----------------------------------------------------------- handlers --
@@ -63,11 +66,21 @@ class Server:
                     break
         finally:
             self._clients.discard(ws)
+            self._paired.discard(ws)
             self.stats["clients"] = max(0, self.stats.get("clients", 1) - 1)
             # SAFETY INVARIANT: never leave a button/modifier stuck.
             self.inp.release_all()
             print(f"[ws] disconnected {peer} — released all input")
         return ws
+
+    async def _broadcast(self, data: bytes, exclude=None):
+        for ws in list(self._paired):
+            if ws is exclude:
+                continue
+            try:
+                await ws.send_bytes(data)
+            except Exception:
+                pass
 
     # ----------------------------------------------------------- lifecycle --
     async def _disconnect_all(self):
@@ -98,7 +111,13 @@ class Server:
                 await ws.send_bytes(P.frame_pair_result(ok, token or ""))
                 if ok:
                     state["paired"] = True
+                    self._paired.add(ws)
                     print("[ws] paired")
+                    # Hand the phone the Mac's current clipboard right away.
+                    if self.clipboard:
+                        text = self.clipboard.get_text()
+                        if text:
+                            await ws.send_bytes(P.frame_clipboard(text))
                 else:
                     # Keep the socket open so the user can just retry (the error
                     # message stays put), but cap attempts to bound brute force.
@@ -124,9 +143,15 @@ class Server:
             self.inp.key(keycode, modifiers)
         elif op == P.OP_TEXT:
             self.inp.text(P.payload(data).decode("utf-8", "replace"))
+        elif op == P.OP_MEDIA:
+            self.inp.media(P.read_media(data))
+        elif op == P.OP_CLIPBOARD_SET:
+            text = P.payload(data).decode("utf-8", "replace")
+            if self.clipboard:
+                self.clipboard.set_text(text)          # phone -> Mac
+            await self._broadcast(P.frame_clipboard(text), exclude=ws)  # sync other phones
         elif op == P.OP_PING:
             await ws.send_bytes(P.frame_pong(P.read_u32(data)))
-        # Keyboard/clipboard opcodes arrive in later slices.
 
     # --------------------------------------------------------------- run ----
     @web.middleware
@@ -143,12 +168,36 @@ class Server:
             pass
         return resp
 
+    async def _clip_poll(self):
+        # Mac -> phone: watch the clipboard and push changes to paired phones.
+        while True:
+            try:
+                await asyncio.sleep(0.5)
+                text = self.clipboard.poll() if self.clipboard else None
+                if text:
+                    await self._broadcast(P.frame_clipboard(text))
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                pass
+
     def build_app(self):
         app = web.Application(middlewares=[self._no_cache])
         app.router.add_get("/ws", self._ws)
         app.router.add_get("/", self._index)
         app.router.add_static("/", path=str(WEB_DIR))
+        if self.clipboard:
+            app.on_startup.append(self._on_startup)
+            app.on_cleanup.append(self._on_cleanup)
         return app
+
+    async def _on_startup(self, _app):
+        self._clip_task = asyncio.ensure_future(self._clip_poll())
+
+    async def _on_cleanup(self, _app):
+        task = getattr(self, "_clip_task", None)
+        if task:
+            task.cancel()
 
     def run(self):
         """Blocking run on the current thread (headless / no menu bar)."""

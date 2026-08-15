@@ -12,9 +12,22 @@ button is tracked so release_all() can let go of exactly what's down.
 import time
 
 import Quartz
+from AppKit import NSEvent, NSEventTypeSystemDefined
 
 from . import protocol as P
 from .displays import Displays
+
+# MEDIA_* -> NX_KEYTYPE_* (the hardware media-key codes macOS listens for).
+_NX = {
+    P.MEDIA_VOL_UP: 0,
+    P.MEDIA_VOL_DOWN: 1,
+    P.MEDIA_BRIGHT_UP: 2,
+    P.MEDIA_BRIGHT_DOWN: 3,
+    P.MEDIA_MUTE: 7,
+    P.MEDIA_PLAY_PAUSE: 16,
+    P.MEDIA_NEXT: 17,
+    P.MEDIA_PREV: 18,
+}
 
 # Two synthesized clicks within this window + distance become a double-click.
 _DOUBLE_CLICK_SEC = 0.5
@@ -129,6 +142,20 @@ class MacInput:
             if flags:
                 Quartz.CGEventSetFlags(ev, flags)
             self._post(ev)
+
+    # --------------------------------------------------------------- media --
+    def media(self, media_id: int):
+        """Tap a media/system key (volume, brightness, play/pause, track). These
+        are NSSystemDefined events, not kVK_ keys — the OS shows its HUD and acts."""
+        nx = _NX.get(media_id)
+        if nx is None:
+            return
+        for down in (True, False):
+            data1 = (nx << 16) | ((0xA if down else 0xB) << 8)
+            ev = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                NSEventTypeSystemDefined, (0, 0), 0xA00 if down else 0xB00, 0, 0, None, 8, data1, -1
+            )
+            self._post(ev.CGEvent())
 
     # ---------------------------------------------------------------- text --
     def text(self, s: str):

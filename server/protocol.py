@@ -31,6 +31,7 @@ OP_BUTTON        = 0x02  # button:u8 (see BTN_*), down:u8 (1=press,0=release)
 OP_SCROLL        = 0x03  # sx:i16, sy:i16
 OP_TEXT          = 0x10  # utf8 bytes (typing / native dictation)
 OP_KEY           = 0x11  # keycode:u16 (kVK_*), modifiers:u16 (MOD_* bitmask)
+OP_MEDIA         = 0x12  # media/system key: key:u8 (see MEDIA_*)
 OP_CLIPBOARD_SET = 0x20  # utf8 (bidirectional; also Server -> Client)
 OP_PING          = 0x40  # seq:u32   (client latency probe)
 OP_PAIR          = 0x7E  # utf8: 6-digit code or stored token (MUST be 1st frame)
@@ -55,6 +56,16 @@ BTN_LEFT   = 0
 BTN_RIGHT  = 1
 BTN_MIDDLE = 2
 
+# Media / system keys for OP_MEDIA (mapped to NX_KEYTYPE_* on the Mac).
+MEDIA_PLAY_PAUSE  = 0
+MEDIA_NEXT        = 1
+MEDIA_PREV        = 2
+MEDIA_VOL_UP      = 3
+MEDIA_VOL_DOWN    = 4
+MEDIA_MUTE        = 5
+MEDIA_BRIGHT_UP   = 6
+MEDIA_BRIGHT_DOWN = 7
+
 # ----------------------------------------------------------------- framing ---
 # Small helpers so all packing/unpacking lives in one place.
 
@@ -78,6 +89,9 @@ def read_u32(data: bytes) -> int:
 
 def read_key(data: bytes):
     return struct.unpack_from("<HH", data, 1)          # keycode, modifiers
+
+def read_media(data: bytes) -> int:
+    return data[1]                                     # MEDIA_* id
 
 def frame_pong(seq: int) -> bytes:
     return bytes([OP_PONG]) + struct.pack("<I", seq)

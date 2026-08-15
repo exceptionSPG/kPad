@@ -13,6 +13,7 @@ import sys
 from ApplicationServices import AXIsProcessTrusted
 
 from . import config
+from .clipboard import Clipboard
 from .displays import Displays
 from .input_mac import MacInput
 from .pairing import Pairing
@@ -69,8 +70,9 @@ def main():
     displays = Displays()
     inp = MacInput(displays)
     pairing = Pairing()
+    clipboard = Clipboard()
     stats = {"clients": 0}
-    server = Server(inp, pairing, config.HOST, config.PORT, stats)
+    server = Server(inp, pairing, config.HOST, config.PORT, stats, clipboard)
 
     host = socket.gethostname()
     if not host.endswith(".local"):
