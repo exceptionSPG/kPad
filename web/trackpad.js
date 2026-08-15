@@ -31,7 +31,7 @@
   const SCROLL_FRICTION = 0.94;
   const SCROLL_MIN_V = 0.15;   // stop inertia below this px/frame
   const LOCK_SAFETY_MS = 6000; // auto-drop a stuck drag-lock
-  const THREE_SWIPE_PX = 55;   // horizontal centroid travel to switch a Space
+  const THREE_SWIPE_PX = 42;   // horizontal centroid travel to switch a Space
 
   // ---- move (accelerated, per-rAF batched) ---------------------------------
   const pts = new Map();       // pointerId -> {x0,y0,x,y,t0}
@@ -163,11 +163,13 @@
       if (!threeStartCentroid) threeStartCentroid = centroid();
       const c = centroid();
       const dx = c.x - threeStartCentroid.x, dy = c.y - threeStartCentroid.y;
-      // horizontal swipe => macOS "move a space" shortcut (Ctrl+Left/Right)
-      if (!spaceSwitched && Math.abs(dx) > THREE_SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+      // horizontal swipe => macOS "move a space" shortcut (Ctrl+Left/Right).
+      // Re-arm from the current position after each fire, so a longer drag keeps
+      // switching desktops (swipe further = go more spaces).
+      if (Math.abs(dx) > THREE_SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
         // swipe left (fingers move left) -> next Space (right); swipe right -> previous
         NET.key(dx < 0 ? KVK.ArrowRight : KVK.ArrowLeft, PROTO.MOD_CONTROL);
-        spaceSwitched = true;
+        threeStartCentroid = c;
       }
       return;
     }
