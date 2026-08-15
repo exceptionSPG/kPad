@@ -10,7 +10,9 @@ phone count, Unpair all, Quit. A 2s timer refreshes the live items.
 import os
 import socket
 import subprocess
+import sys
 import tempfile
+from pathlib import Path
 
 import rumps
 import segno
@@ -25,6 +27,13 @@ from ApplicationServices import (
 from .pairing import STORE_FILE
 
 AX_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+
+
+def _resource(rel):
+    """Path to a bundled resource, in the frozen app or the source tree."""
+    if getattr(sys, "frozen", False):
+        return os.path.join(sys._MEIPASS, rel)
+    return str(Path(__file__).resolve().parent.parent / rel)
 
 
 def _current_ip():
@@ -43,7 +52,11 @@ def _current_ip():
 
 class MenuBarApp(rumps.App):
     def __init__(self, server, urls):
-        super().__init__("LAN Trackpad", title="🖱", quit_button=None)
+        icon = _resource("assets/menubar.png")
+        if os.path.exists(icon):
+            super().__init__("kPad", icon=icon, template=True, quit_button=None)
+        else:
+            super().__init__("kPad", title="🖱", quit_button=None)
         self.server = server
         self.pairing = server.pairing
         self.stats = server.stats
@@ -62,7 +75,7 @@ class MenuBarApp(rumps.App):
             self.item_status,
             None,
             rumps.MenuItem("Unpair all phones", callback=self._unpair_all),
-            rumps.MenuItem("Quit LAN Trackpad", callback=self._quit),
+            rumps.MenuItem("Quit kPad", callback=self._quit),
         ]
 
         self._timer = rumps.Timer(self._refresh, 2)
@@ -91,7 +104,7 @@ class MenuBarApp(rumps.App):
         # phone hotspot, …), not the address captured at launch.
         url = f"http://{_current_ip()}:{config.PORT}/?code={self.pairing.code}"
         if not self._qr_path:
-            self._qr_path = os.path.join(tempfile.gettempdir(), "lan-trackpad-qr.png")
+            self._qr_path = os.path.join(tempfile.gettempdir(), "kpad-qr.png")
         segno.make(url, error="m").save(self._qr_path, scale=10, border=3)
         subprocess.Popen(["open", self._qr_path])
 
@@ -105,7 +118,7 @@ class MenuBarApp(rumps.App):
             pass
         self.server.disconnect_all()
         try:
-            rumps.notification("LAN Trackpad", "Unpaired",
+            rumps.notification("kPad", "Unpaired",
                                "Every phone must enter the code again.")
         except Exception:
             pass

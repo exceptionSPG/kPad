@@ -1,4 +1,4 @@
-/* LAN Trackpad — phone side. No secure context here (http://*.local), so no
+/* kPad — phone side. No secure context here (http://*.local), so no
    fancy APIs; just a solid full-bleed surface that never rubber-bands or zooms. */
 
 :root {

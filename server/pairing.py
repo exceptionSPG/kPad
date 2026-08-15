@@ -7,7 +7,7 @@ Model:
 * On a successful code pairing we issue a long-lived random TOKEN, persist it,
   and hand it to the phone. The phone stores it and presents the token on every
   later connection, so it never has to re-enter the code.
-* Tokens live in ~/.lantrackpad/tokens.json (0600). Delete that file to
+* Tokens live in ~/.kpad/tokens.json (0600). Delete that file to
   un-pair every phone.
 
 Enforcement lives in wsserver: the first frame on a connection must be a valid
@@ -22,7 +22,7 @@ import json
 import secrets
 from pathlib import Path
 
-STORE_DIR = Path.home() / ".lantrackpad"
+STORE_DIR = Path.home() / ".kpad"
 STORE_FILE = STORE_DIR / "tokens.json"
 
 

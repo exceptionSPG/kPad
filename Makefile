@@ -1,4 +1,4 @@
-# LAN Trackpad — dev Makefile.
+# kPad — dev Makefile.
 VENV := .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
@@ -21,11 +21,11 @@ $(VENV)/.stamp: requirements.txt
 	$(PIP) install -q -r requirements.txt
 	@touch $(VENV)/.stamp
 
-# Build a dev LAN Trackpad.app to grant Accessibility to (see scripts/make_app.sh).
+# Build a dev kPad.app to grant Accessibility to (see scripts/make_app.sh).
 app: venv proto
 	bash scripts/make_app.sh
 
-# Build a self-contained, installable LAN Trackpad.app + .dmg (PyInstaller).
+# Build a self-contained, installable kPad.app + .dmg (PyInstaller).
 dmg: venv proto
 	bash scripts/build.sh
 

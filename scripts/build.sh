@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build LAN Trackpad into a self-contained .app and a .dmg you can install.
+# Build kPad into a self-contained .app and a .dmg you can install.
 #
 # One idempotent script for both local dev and CI. Defaults to ad-hoc signing,
 # which is all a locally-built personal app needs (no Apple Developer account).
@@ -15,8 +15,8 @@ cd "$(dirname "$0")/.."
 
 PY=.venv/bin/python
 PIP=.venv/bin/pip
-APP="dist/LAN Trackpad.app"
-DMG="dist/LAN-Trackpad.dmg"
+APP="dist/kPad.app"
+DMG="dist/kPad.dmg"
 IDENTITY="${CODESIGN_IDENTITY:--}"     # "-" == ad-hoc
 
 echo "==> Regenerating client protocol mirror"
@@ -27,7 +27,7 @@ echo "==> Ensuring PyInstaller is available"
 
 echo "==> Building the .app (PyInstaller)"
 rm -rf build dist
-.venv/bin/pyinstaller --noconfirm LANTrackpad.spec
+.venv/bin/pyinstaller --noconfirm kPad.spec
 
 echo "==> Code signing ($([ "$IDENTITY" = "-" ] && echo ad-hoc || echo "$IDENTITY"))"
 if [ "$IDENTITY" = "-" ]; then
@@ -39,7 +39,7 @@ codesign --verify --deep --strict "$APP" && echo "    signature verifies"
 
 echo "==> Creating $DMG"
 rm -f "$DMG"
-hdiutil create -volname "LAN Trackpad" -srcfolder "$APP" -ov -format UDZO "$DMG" >/dev/null
+hdiutil create -volname "kPad" -srcfolder "$APP" -ov -format UDZO "$DMG" >/dev/null
 
 # Optional: notarize + staple (needs a real Developer ID identity + notary profile).
 if [ -n "${NOTARY_PROFILE:-}" ] && [ "$IDENTITY" != "-" ]; then
@@ -57,7 +57,7 @@ echo "Done:"
 echo "  App: $APP"
 echo "  DMG: $DMG"
 echo ""
-echo "Install: open the .dmg and drag LAN Trackpad to Applications, then grant"
+echo "Install: open the .dmg and drag kPad to Applications, then grant"
 echo "Accessibility to it once. Ad-hoc builds are unsigned to Gatekeeper — if"
 echo "macOS blocks the first launch, right-click the app > Open, or run:"
-echo "  xattr -dr com.apple.quarantine \"/Applications/LAN Trackpad.app\""
+echo "  xattr -dr com.apple.quarantine \"/Applications/kPad.app\""

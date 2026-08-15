@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for LAN Trackpad. Build via scripts/build.sh (or `make dmg`).
+# PyInstaller spec for kPad. Build via scripts/build.sh (or `make dmg`).
 
 from PyInstaller.utils.hooks import collect_submodules
 
@@ -14,7 +14,10 @@ a = Analysis(
     ["app_entry.py"],
     pathex=[],
     binaries=[],
-    datas=[("web", "web")],          # bundle the phone client
+    datas=[
+        ("web", "web"),                        # bundle the phone client
+        ("assets/menubar.png", "assets"),      # menu-bar template icon
+    ],
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
@@ -26,24 +29,24 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
-    name="LANTrackpad",
+    name="kPad",
     debug=False,
     strip=False,
     upx=False,
     console=False,                   # menu-bar app, no terminal window
 )
-coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="LANTrackpad")
+coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="kPad")
 
 app = BUNDLE(
     coll,
-    name="LAN Trackpad.app",
-    icon=None,
-    bundle_identifier="com.lantrackpad.app",
+    name="kPad.app",
+    icon="assets/kPad.icns",
+    bundle_identifier="com.kailaba.kpad",
     info_plist={
         "LSUIElement": True,                 # menu-bar only, no Dock icon
         "LSMinimumSystemVersion": "13.0",
-        "CFBundleShortVersionString": "0.1.0",
-        "CFBundleVersion": "1",
+        "CFBundleShortVersionString": "0.2.0",
+        "CFBundleVersion": "2",
         "NSHighResolutionCapable": True,
     },
 )

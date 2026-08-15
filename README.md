@@ -1,26 +1,34 @@
-# LAN Trackpad
+<p align="center">
+  <img src="assets/icon.png" width="120" alt="kPad icon">
+</p>
 
-**Turn any phone into a trackpad, keyboard, and remote for your Mac — over your
-local network, with nothing to install on the phone.**
+<h1 align="center">kPad</h1>
+
+<p align="center">
+  <b>Turn any device into a trackpad, keyboard, and remote for your Mac</b><br>
+  — over your local network, with <b>nothing to install on the phone</b>.
+</p>
+
+<p align="center">
+  <i>by Kailaba</i><br>
+  <img src="https://img.shields.io/badge/macOS-13%2B-black">
+  <img src="https://img.shields.io/badge/phone-any%20browser-blue">
+  <img src="https://img.shields.io/badge/License-MIT-green">
+</p>
+
+---
 
 Run one small menu-bar app on your Mac, open the shown URL (or scan the QR) in
 your phone's browser, and your phone becomes a precise trackpad + keyboard +
 media remote. No App Store, no account, no cloud — everything stays on your LAN.
 
-![Platform](https://img.shields.io/badge/macOS-13%2B-black)
-![Phone](https://img.shields.io/badge/phone-any%20browser-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-
----
-
-## Why this one
+## Why kPad
 
 Most "phone as mouse" tools make you install an app on **both** the computer
-**and** the phone, and many route your input through their servers.
+**and** the phone, and many route your input through their servers. kPad is
+deliberately smaller:
 
-LAN Trackpad is deliberately smaller:
-
-| | LAN Trackpad | Typical alternatives |
+| | **kPad** | Typical alternatives |
 |---|---|---|
 | **Install on phone** | ❌ none — just a browser | ✅ app required (App Store / Play) |
 | **Install on Mac** | ✅ one tiny menu-bar app | ✅ app required |
@@ -31,8 +39,8 @@ LAN Trackpad is deliberately smaller:
 - **Fully local.** No relay server, no account, no telemetry, no WebRTC. Your
   input never leaves your network. Works with **zero internet** — connect the
   Mac to your phone's hotspot and it still works.
-- **Zero-install phone side.** Any phone with a modern browser: iOS Safari,
-  Android Chrome. Nothing to update or trust on the phone.
+- **Zero-install phone side.** Any phone or tablet with a modern browser: iOS
+  Safari, Android Chrome. Nothing to update or trust on the device.
 - **Connect in seconds.** Same Wi-Fi → scan the QR → you're driving the Mac.
 
 ## Features
@@ -42,19 +50,17 @@ LAN Trackpad is deliberately smaller:
   tap-and-a-half **drag-lock**. Multi-monitor aware.
 - **Three-finger swipe** left/right to switch **Desktops / Spaces**.
 - **Keyboard** — type with the phone's own keyboard, **voice dictation** via its
-  mic, special keys (Esc/Tab/⌫/Return/arrows), and sticky **⌘⌃⌥⇧ combos** (⌘C,
-  ⌘Tab, …).
+  mic, special keys (Esc/Tab/⌫/Return/arrows), and sticky **⌘⌃⌥⇧ combos**.
 - **Clipboard sync**, both directions.
 - **Media keys** — play/pause, prev/next, volume, mute, brightness.
 - **Secure enough for a LAN** — a 6-digit pairing code (embedded in the QR);
-  paired phones are remembered so they never re-prompt.
+  paired devices are remembered so they never re-prompt.
 
 ## Quick start
 
-1. **Install the Mac app.** Grab the latest `.dmg` from
-   [Releases](../../releases), drag **LAN Trackpad** to Applications, and launch
-   it — it lives in the menu bar (🖱).
-   *(Or run from source — see [Development](#development).)*
+1. **Install the Mac app.** Grab the latest `kPad.dmg` from
+   [Releases](../../releases), drag **kPad** to Applications, and launch it — it
+   lives in the menu bar. *(Or run from source — see [Development](#development).)*
 2. **Grant Accessibility** once (the menu's "Grant Accessibility" item). macOS
    requires this to move the cursor and type.
 3. **On your phone** (same Wi-Fi): open the menu's **Show QR code** and scan it,
@@ -62,9 +68,9 @@ LAN Trackpad is deliberately smaller:
 
 > First launch blocked by Gatekeeper? The public build is ad-hoc signed (no paid
 > Apple account). Right-click the app → **Open** once, or run
-> `xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`.
+> `xattr -dr com.apple.quarantine "/Applications/kPad.app"`.
 
-**Always-on:** System Settings → General → Login Items → add *LAN Trackpad*.
+**Always-on:** System Settings → General → Login Items → add **kPad**.
 
 ## No internet? Use a hotspot
 
@@ -74,7 +80,7 @@ with no internet at all.
 
 ## Privacy & security
 
-- LAN only. Input is sent directly from your phone to your Mac over your local
+- LAN only. Input goes directly from your phone to your Mac over your local
   network — never to any third party.
 - The only access control is the pairing code/token; that's intentional and
   appropriate for a same-network personal tool. Don't expose the port to the
@@ -86,23 +92,24 @@ Requires macOS 13+ and Python 3.12. The phone client is vanilla HTML/CSS/JS —
 no build step.
 
 ```bash
-make run     # dev server (run it from a terminal that has Accessibility granted)
-make app     # a dev .app you can grant Accessibility to directly
-make dmg     # build the self-contained, installable .app + .dmg
+make run     # dev server (run from a terminal that has Accessibility granted)
+make app     # a dev kPad.app you can grant Accessibility to directly
+make dmg     # build the self-contained, installable kPad.app + .dmg
+make proto   # regenerate web/protocol.js from server/protocol.py
 ```
 
 The Mac side is a single Python process: aiohttp serves the client and a
 WebSocket on one port, input is synthesized via pyobjc/Quartz `CGEvent`, and the
 menu bar is `rumps`. The wire protocol lives in one place — `server/protocol.py`
 — and `make proto` regenerates the client's `web/protocol.js` mirror so the two
-sides can never drift.
+sides can never drift. Icons are generated by `scripts/gen_icon.py`.
 
 > **Building requires a Mac.** PyInstaller doesn't cross-compile and the app uses
 > macOS-only frameworks + `codesign`/`hdiutil`, so a `.dmg` cannot be built on
 > Linux/Raspberry Pi — build locally on a Mac or on a macOS CI runner.
 
-Releases are built and published automatically by GitHub Actions on a
-`macos` runner when a `v*` tag is pushed (see `.github/workflows/release.yml`).
+Releases are built and published automatically by GitHub Actions on a `macos`
+runner when a `v*` tag is pushed (see `.github/workflows/release.yml`).
 
 ## Roadmap
 
@@ -113,4 +120,4 @@ Releases are built and published automatically by GitHub Actions on a
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT © Kailaba — see [LICENSE](LICENSE).

@@ -56,7 +56,7 @@ def _lan_ip():
 
 def main():
     if sys.platform != "darwin":
-        sys.exit("LAN Trackpad server only runs on macOS.")
+        sys.exit("kPad server only runs on macOS.")
 
     # Line-buffer stdout so startup info (URLs, pairing code) shows immediately —
     # important when running as a long-lived process or logging to a file (.app).
@@ -80,7 +80,7 @@ def main():
     ip = _lan_ip()
     host_url = f"http://{host}:{config.PORT}/"
     ip_url = f"http://{ip}:{config.PORT}/"
-    print("LAN Trackpad — open on your phone (same Wi-Fi):")
+    print("kPad — open on your phone (same Wi-Fi):")
     print(f"    {host_url}")
     print(f"    {ip_url}   (if .local doesn't resolve)")
     print()
@@ -88,8 +88,8 @@ def main():
     print("Menu-bar icon 🖱 has the QR, status, and controls.  Ctrl-C to stop.\n")
 
     # rumps must own the main thread, so the server runs in a background thread.
-    # LANTRACKPAD_NO_MENUBAR runs it headless on the main thread (dev/testing).
-    if os.environ.get("LANTRACKPAD_NO_MENUBAR"):
+    # KPAD_NO_MENUBAR runs it headless on the main thread (dev/testing).
+    if os.environ.get("KPAD_NO_MENUBAR"):
         server.run()
     else:
         server.start_in_thread()

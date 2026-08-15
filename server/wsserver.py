@@ -219,7 +219,7 @@ class Server:
             ready.set()
             loop.run_forever()
 
-        t = threading.Thread(target=_run, name="lan-trackpad-server", daemon=True)
+        t = threading.Thread(target=_run, name="kpad-server", daemon=True)
         t.start()
         ready.wait(5)
         return t

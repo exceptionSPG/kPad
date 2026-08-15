@@ -1,4 +1,4 @@
-# LAN Trackpad — Mac side. Python 3.12.
+# kPad — Mac side. Python 3.12.
 # HTTP + WebSocket on one port.
 aiohttp>=3.9
 

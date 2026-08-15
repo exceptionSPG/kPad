@@ -7,4 +7,7 @@ dist/
 # generated from server/protocol.py via `make proto`
 web/protocol.js
 # local token store
-.lantrackpad/
+.kpad/
+
+# generated icon intermediates (outputs assets/*.icns,*.png are committed)
+assets/kPad.iconset/

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build a *development* LAN Trackpad.app that runs the source in place.
+# Build a *development* kPad.app that runs the source in place.
 #
 # Purpose: give Accessibility permission a stable target that is the app itself,
-# instead of granting your terminal. Grant "LAN Trackpad" once in
+# instead of granting your terminal. Grant "kPad" once in
 # System Settings > Privacy & Security > Accessibility and it sticks across runs.
 #
 # This is NOT the shipping bundle — it references this repo + its .venv by
@@ -13,8 +13,8 @@ set -euo pipefail
 
 PROJECT="$(cd "$(dirname "$0")/.." && pwd)"
 PY="$PROJECT/.venv/bin/python"
-APP="$PROJECT/dist/LAN Trackpad.app"
-LOG="$HOME/Library/Logs/LANTrackpad.log"
+APP="$PROJECT/dist/kPad.app"
+LOG="$HOME/Library/Logs/kPad.log"
 
 if [ ! -x "$PY" ]; then
   echo "No venv found. Run 'make venv' first." >&2
@@ -29,9 +29,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key>            <string>LAN Trackpad</string>
-  <key>CFBundleDisplayName</key>     <string>LAN Trackpad</string>
-  <key>CFBundleIdentifier</key>      <string>com.lantrackpad.dev</string>
+  <key>CFBundleName</key>            <string>kPad</string>
+  <key>CFBundleDisplayName</key>     <string>kPad</string>
+  <key>CFBundleIdentifier</key>      <string>com.kailaba.kpad.dev</string>
   <key>CFBundleExecutable</key>      <string>launcher</string>
   <key>CFBundlePackageType</key>     <string>APPL</string>
   <key>CFBundleInfoDictionaryVersion</key> <string>6.0</string>
@@ -55,7 +55,7 @@ LAUNCH
 chmod +x "$APP/Contents/MacOS/launcher"
 
 # Ad-hoc sign so TCC has a stable identity (cdhash) across rebuilds.
-codesign --force --sign - --identifier com.lantrackpad.dev "$APP"
+codesign --force --sign - --identifier com.kailaba.kpad.dev "$APP"
 
 echo "Built: $APP"
 echo "Log:   $LOG"

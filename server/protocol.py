@@ -1,5 +1,5 @@
 """
-LAN Trackpad wire protocol — THE SINGLE SOURCE OF TRUTH.
+kPad wire protocol — THE SINGLE SOURCE OF TRUTH.
 
 Frame layout:  [opcode:u8][payload ...]   — little-endian throughout.
 

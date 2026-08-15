@@ -38,9 +38,9 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/LAN-Trackpad.dmg
+          files: dist/kPad.dmg
           generate_release_notes: true
           body: |
             Local build is ad-hoc signed (no paid Apple account). If macOS blocks
             first launch: right-click the app → Open, or
-            `xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`.
+            `xattr -dr com.apple.quarantine "/Applications/kPad.app"`.
