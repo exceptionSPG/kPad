@@ -129,8 +129,22 @@ class Server:
         # Keyboard/clipboard opcodes arrive in later slices.
 
     # --------------------------------------------------------------- run ----
+    @web.middleware
+    async def _no_cache(self, request, handler):
+        # LAN tool: assets are tiny and change during dev. Force the phone to
+        # always fetch fresh files so it can never run a stale cached client
+        # (mobile browsers heuristically cache JS without this).
+        if request.path == "/ws":
+            return await handler(request)
+        resp = await handler(request)
+        try:
+            resp.headers["Cache-Control"] = "no-store, must-revalidate"
+        except (AttributeError, RuntimeError):
+            pass
+        return resp
+
     def build_app(self):
-        app = web.Application()
+        app = web.Application(middlewares=[self._no_cache])
         app.router.add_get("/ws", self._ws)
         app.router.add_get("/", self._index)
         app.router.add_static("/", path=str(WEB_DIR))
