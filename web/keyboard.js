@@ -1,12 +1,17 @@
 /* Keyboard panel: text + native dictation + special keys + sticky modifiers.
  *
- * Text/voice: a real <input> drives the phone's native keyboard (and its mic
- * button = dictation). We translate its beforeinput events into wire opcodes and
- * keep the field itself empty — what you type lands on the Mac, not the phone.
+ * Text/voice capture is DIFF-BASED and single-path: the field keeps what you
+ * type (and dictate), and on every `input` we diff old vs new value and forward
+ * only the delta. This is robust across platforms — iOS Safari, Android/Samsung
+ * IMEs, and predictive/composition input all funnel through one code path — so a
+ * keystroke can't be double-sent (the old beforeinput+input dual path doubled
+ * characters on Android), and native Backspace works because the field has real
+ * content to delete (the diff turns that deletion into a Backspace key).
  *
- * Modifiers are sticky: tap ⌘, then a key, and that one key carries ⌘ (⌘C, ⌘Tab,
- * ⌥⌫ …), after which the modifiers clear. On-screen buttons preventDefault on
- * pointerdown so tapping them never steals focus — the native keyboard stays up.
+ * What you type lands on the Mac wherever its cursor is; the field is just a
+ * capture buffer. Modifiers are sticky: tap ⌘, then a key => ⌘C, then clear.
+ * On-screen buttons preventDefault on pointerdown so they never steal focus and
+ * dismiss the native keyboard.
  */
 
 (function () {
@@ -26,14 +31,16 @@
   const toggle = document.getElementById("kbdToggle");
 
   let activeMods = 0;
-  const modButtons = {};     // bit -> button element
+  let prev = "";                 // last-seen field value, for diffing
+  const modButtons = {};         // bit -> button element
 
   // ---- open / close --------------------------------------------------------
   function isOpen() { return !kbd.classList.contains("hidden"); }
+  function resetBuffer() { input.value = ""; prev = ""; }
   function open() {
     kbd.classList.remove("hidden");
     toggle.classList.add("on");
-    input.value = "";
+    resetBuffer();
     setTimeout(() => input.focus(), 20);
   }
   function close() {
@@ -41,58 +48,60 @@
     input.blur();
     kbd.classList.add("hidden");
     toggle.classList.remove("on");
+    resetBuffer();
   }
   toggle.addEventListener("click", () => (isOpen() ? close() : open()));
   document.getElementById("kbdDone").addEventListener("click", close);
 
   // ---- modifiers -----------------------------------------------------------
   function setModUI() {
-    for (const bit in modButtons) {
-      modButtons[bit].classList.toggle("on", !!(activeMods & bit));
-    }
+    for (const bit in modButtons) modButtons[bit].classList.toggle("on", !!(activeMods & bit));
   }
   function clearMods() { activeMods = 0; setModUI(); }
 
-  // ---- sending -------------------------------------------------------------
+  // ---- key / text out ------------------------------------------------------
   function tapKey(keycode) {
     NET.key(keycode, activeMods);
-    clearMods();                 // modifiers apply to a single key, then reset
-  }
-  function sendText(str) {
-    if (!str) return;
-    // A single printable char while a modifier is held => a key combo (⌘C…).
-    if (activeMods && str.length === 1) {
-      const kc = window.charToKvk(str);
-      if (kc != null) { NET.key(kc, activeMods); clearMods(); return; }
-    }
-    NET.text(str);
-    if (activeMods) clearMods();  // don't leak modifiers onto later typing
+    clearMods();
+    resetBuffer();               // a command key breaks the text buffer; start fresh
+    if (isOpen()) input.focus();
   }
 
-  // ---- native input translation -------------------------------------------
-  input.addEventListener("beforeinput", function (e) {
-    const t = e.inputType || "";
-    if (t.startsWith("delete")) {
-      e.preventDefault();
-      tapKey(KVK.Backspace);
-    } else if (t === "insertLineBreak" || t === "insertParagraph") {
-      e.preventDefault();
-      tapKey(KVK.Return);
-    } else if (t.startsWith("insert")) {
-      if (e.data != null) {         // typed text or dictation with data
-        e.preventDefault();
-        sendText(e.data);
-      }                              // else: let the input handler flush it
-    }
-  });
-
-  // Fallback for insertions that weren't cancelable (some dictation paths):
-  // whatever landed in the field gets flushed and the field cleared.
+  // ---- diff-based text capture (single path) -------------------------------
   input.addEventListener("input", function () {
-    if (input.value) { sendText(input.value); input.value = ""; }
+    const val = input.value;
+    // common prefix / suffix vs the previous value
+    const minLen = Math.min(val.length, prev.length);
+    let cp = 0;
+    while (cp < minLen && val[cp] === prev[cp]) cp++;
+    let cs = 0;
+    while (cs < minLen - cp && val[val.length - 1 - cs] === prev[prev.length - 1 - cs]) cs++;
+    const removed = prev.slice(cp, prev.length - cs);
+    const added = val.slice(cp, val.length - cs);
+
+    if (added) {
+      // single char while a modifier is held => a combo (⌘C, ⌥←, …)
+      if (added.length === 1 && activeMods) {
+        const kc = window.charToKvk(added);
+        if (kc != null) { NET.key(kc, activeMods); clearMods(); resetBuffer(); return; }
+      }
+      // forward text; newlines become Return keypresses
+      const parts = added.split("\n");
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i]) NET.text(parts[i]);
+        if (i < parts.length - 1) NET.key(KVK.Return, 0);
+      }
+      if (activeMods) clearMods();
+      if (added.includes("\n")) { resetBuffer(); return; }
+    } else if (removed) {
+      for (let i = 0; i < removed.length; i++) NET.key(KVK.Backspace, 0);
+    }
+
+    prev = val;
+    if (val.length > 200) resetBuffer();   // keep the buffer from growing forever
   });
 
-  // Physical/bluetooth-keyboard special keys that skip beforeinput.
+  // Special keys from a physical/bluetooth keyboard (soft IMEs use the buttons).
   input.addEventListener("keydown", function (e) {
     const map = { Escape: KVK.Escape, Tab: KVK.Tab, ArrowLeft: KVK.ArrowLeft,
                   ArrowRight: KVK.ArrowRight, ArrowUp: KVK.ArrowUp, ArrowDown: KVK.ArrowDown };
@@ -100,7 +109,7 @@
   });
 
   // ---- on-screen buttons ---------------------------------------------------
-  // Keep focus on the input so the native keyboard doesn't dismiss.
+  // preventDefault on pointerdown keeps focus on the field (native keyboard stays up).
   kbd.querySelectorAll(".kbdKeys button, .kbdMods button").forEach(function (btn) {
     btn.addEventListener("pointerdown", (e) => e.preventDefault());
   });
@@ -117,6 +126,5 @@
     });
   });
 
-  // Close the keyboard if we drop the connection (pairing overlay takes over).
   window.addEventListener("pagehide", close);
 })();

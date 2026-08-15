@@ -94,10 +94,13 @@ html, body {
   min-width: 0;
   padding: 12px 14px;
   font-size: 16px;                 /* >=16px so iOS doesn't zoom on focus */
+  line-height: 1.35;
   border-radius: 10px;
   border: 1px solid #2a2f42;
   background: #12141d;
   color: var(--fg);
+  resize: none;
+  font-family: inherit;
 }
 #kbdInput:focus { outline: none; border-color: var(--ok); }
 .kbdDone {

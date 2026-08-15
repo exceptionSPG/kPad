@@ -8,11 +8,14 @@ phone count, Unpair all, Quit. A 2s timer refreshes the live items.
 """
 
 import os
+import socket
 import subprocess
 import tempfile
 
 import rumps
 import segno
+
+from . import config
 from ApplicationServices import (
     AXIsProcessTrusted,
     AXIsProcessTrustedWithOptions,
@@ -22,6 +25,20 @@ from ApplicationServices import (
 from .pairing import STORE_FILE
 
 AX_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+
+
+def _current_ip():
+    """The Mac's IP on whatever network it's on *right now* (recomputed, not the
+    value captured at launch) — so the QR stays correct after switching Wi-Fi or
+    joining a phone hotspot. No packets are actually sent."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("192.0.2.1", 1))
+        return s.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+    finally:
+        s.close()
 
 
 class MenuBarApp(rumps.App):
@@ -69,9 +86,10 @@ class MenuBarApp(rumps.App):
         subprocess.Popen(["open", AX_PANE])
 
     def _show_qr(self, _):
-        # Encode the IP URL (most reliable to reach) + the pairing code, so the
-        # phone scans straight onto the paired trackpad.
-        url = f"{self.urls['ip']}?code={self.pairing.code}"
+        # Encode the CURRENT IP (+ pairing code), recomputed now so the QR is
+        # valid on whatever network the Mac is on this moment (Wi-Fi change,
+        # phone hotspot, …), not the address captured at launch.
+        url = f"http://{_current_ip()}:{config.PORT}/?code={self.pairing.code}"
         if not self._qr_path:
             self._qr_path = os.path.join(tempfile.gettempdir(), "lan-trackpad-qr.png")
         segno.make(url, error="m").save(self._qr_path, scale=10, border=3)
