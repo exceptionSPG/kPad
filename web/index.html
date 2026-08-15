@@ -14,9 +14,37 @@
     <span id="dot" class="dot"></span>
     <span id="statusText">connecting…</span>
     <span id="rtt" class="rtt"></span>
+    <button id="kbdToggle" aria-label="keyboard">⌨</button>
   </header>
 
   <main id="pad" aria-label="trackpad surface"></main>
+
+  <!-- Keyboard panel: text + native dictation + special keys + sticky modifiers -->
+  <section id="kbd" class="hidden">
+    <div class="kbdBar">
+      <input id="kbdInput" type="text" autocapitalize="off" autocomplete="off"
+             autocorrect="off" spellcheck="false" inputmode="text"
+             placeholder="Type here, or tap 🎤 on your keyboard to dictate — goes to your Mac">
+      <button id="kbdDone" class="kbdDone">Done</button>
+    </div>
+    <div class="kbdKeys">
+      <button data-key="Escape">esc</button>
+      <button data-key="Tab">⇥ tab</button>
+      <button data-key="Backspace">⌫</button>
+      <button data-key="Return">⏎ return</button>
+      <button data-key="ArrowLeft">←</button>
+      <button data-key="ArrowDown">↓</button>
+      <button data-key="ArrowUp">↑</button>
+      <button data-key="ArrowRight">→</button>
+    </div>
+    <div class="kbdMods">
+      <button data-mod="CONTROL">⌃ ctrl</button>
+      <button data-mod="OPTION">⌥ opt</button>
+      <button data-mod="SHIFT">⇧ shift</button>
+      <button data-mod="COMMAND">⌘ cmd</button>
+      <span class="kbdHint">tap a modifier, then a key (⌘C, ⌘Tab…)</span>
+    </div>
+  </section>
 
   <!-- Pairing overlay: shown first-time or if the Mac no longer knows this phone -->
   <section id="pair" class="hidden">
@@ -52,5 +80,6 @@
   <script src="keymap.js"></script>
   <script src="app.js"></script>
   <script src="trackpad.js"></script>
+  <script src="keyboard.js"></script>
 </body>
 </html>

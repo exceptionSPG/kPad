@@ -122,6 +122,8 @@ class Server:
         elif op == P.OP_KEY:
             keycode, modifiers = P.read_key(data)
             self.inp.key(keycode, modifiers)
+        elif op == P.OP_TEXT:
+            self.inp.text(P.payload(data).decode("utf-8", "replace"))
         elif op == P.OP_PING:
             await ws.send_bytes(P.frame_pong(P.read_u32(data)))
         # Keyboard/clipboard opcodes arrive in later slices.

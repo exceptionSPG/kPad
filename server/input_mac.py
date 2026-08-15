@@ -130,6 +130,18 @@ class MacInput:
                 Quartz.CGEventSetFlags(ev, flags)
             self._post(ev)
 
+    # ---------------------------------------------------------------- text --
+    def text(self, s: str):
+        """Type a unicode string (typing + native dictation). Uses
+        CGEventKeyboardSetUnicodeString so it reproduces any character exactly,
+        independent of keyboard layout — the right tool for dictated phrases."""
+        if not s:
+            return
+        for is_down in (True, False):
+            ev = Quartz.CGEventCreateKeyboardEvent(None, 0, is_down)
+            Quartz.CGEventKeyboardSetUnicodeString(ev, len(s), s)
+            self._post(ev)
+
     # -------------------------------------------------------------- scroll --
     def scroll(self, sx: int, sy: int):
         # Pixel unit for smooth scrolling. wheel1 = vertical, wheel2 = horizontal.

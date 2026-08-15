@@ -6,6 +6,14 @@ whole client.
 
 ## Status
 
+**Slice 5 — keyboard + voice + modifiers.** A ⌨ toggle opens a keyboard panel:
+a native text field (so the phone's own keyboard — and its 🎤 dictation button —
+drive it) streams typing/dictation as unicode text (`OP_TEXT`), a row of special
+keys (Esc/Tab/⌫/Return/arrows) sends `OP_KEY`, and sticky modifiers (⌃⌥⇧⌘)
+combine with the next key for combos like ⌘C / ⌘Tab. Text is typed on the Mac via
+`CGEventKeyboardSetUnicodeString` (layout-independent, exact for dictated
+phrases).
+
 **Slice 4 — menu bar + QR + Spaces gesture.** A menu-bar icon (🖱) shows the
 connect URL, the pairing code, connected-phone count, and a live Accessibility
 status with a one-click Grant button; "Show QR code" opens a QR encoding the URL

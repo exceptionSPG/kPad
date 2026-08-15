@@ -58,6 +58,13 @@
     v.setUint16(3, (modifiers || 0) & 0xffff, true);
     return b;
   }
+  function frameText(str) {
+    const bytes = new TextEncoder().encode(str);
+    const b = new Uint8Array(1 + bytes.length);
+    b[0] = PROTO.OP_TEXT;
+    b.set(bytes, 1);
+    return b.buffer;
+  }
   function framePair(str) {
     const bytes = new TextEncoder().encode(str);
     const b = new Uint8Array(1 + bytes.length);
@@ -218,6 +225,7 @@
     button: (button, down) => { if (paired) send(frameButton(button, down)); },
     scroll: (sx, sy) => { if (paired) send(frameScroll(sx, sy)); },
     key: (keycode, modifiers) => { if (paired) send(frameKey(keycode, modifiers)); },
+    text: (str) => { if (paired && str) send(frameText(str)); },
     // Safety: let go of every button (used on page-hide / phone-lock, when the
     // socket may still be open so the server's own release_all hasn't fired).
     releaseButtons: () => {

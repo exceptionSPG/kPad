@@ -63,6 +63,61 @@ html, body {
   background: #221d16;
 }
 
+/* Keyboard toggle in the header */
+#kbdToggle {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  padding: 2px 6px;
+  line-height: 1;
+}
+#kbdToggle.on { color: var(--ok); }
+
+/* Keyboard panel (overlays the pad; native OS keyboard appears below it) */
+#kbd {
+  position: absolute;
+  left: 0; right: 0;
+  top: 52px; bottom: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#kbd.hidden { display: none; }
+.kbdBar { display: flex; gap: 8px; }
+#kbdInput {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  font-size: 16px;                 /* >=16px so iOS doesn't zoom on focus */
+  border-radius: 10px;
+  border: 1px solid #2a2f42;
+  background: #12141d;
+  color: var(--fg);
+}
+#kbdInput:focus { outline: none; border-color: var(--ok); }
+.kbdDone {
+  border: none; border-radius: 10px; padding: 0 16px;
+  background: #2a2f42; color: var(--fg); font-size: 15px;
+}
+.kbdKeys, .kbdMods { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kbdKeys button, .kbdMods button {
+  border: 1px solid #2a2f42;
+  border-radius: 10px;
+  background: var(--pad);
+  color: var(--fg);
+  font-size: 15px;
+  padding: 12px 14px;
+  min-width: 48px;
+}
+.kbdKeys button:active, .kbdMods button:active { background: var(--pad-active); }
+.kbdMods button.on { background: var(--ok); color: #06210f; border-color: var(--ok); }
+.kbdHint { color: var(--muted); font-size: 12px; margin-left: 4px; }
+
 /* Pairing overlay */
 #pair {
   position: absolute;
