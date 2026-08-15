@@ -1,0 +1,27 @@
+name: CI
+
+# Fast sanity check on every push / PR: deps install, protocol mirror generates,
+# and the server package imports on macOS (pyobjc, aiohttp, rumps all resolve).
+# The full .dmg build lives in release.yml, gated on version tags.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps + generate protocol
+        run: |
+          make venv
+          make proto
+      - name: Import server package
+        run: .venv/bin/python -c "import server.main, server.wsserver, server.menubar, server.clipboard; print('ok')"

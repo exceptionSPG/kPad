@@ -1,118 +1,116 @@
 # LAN Trackpad
 
-Turn any phone into a Mac trackpad over your local network. No phone app, no
-internet, no cloud — the Mac serves a web page and the phone's browser is the
-whole client.
+**Turn any phone into a trackpad, keyboard, and remote for your Mac — over your
+local network, with nothing to install on the phone.**
 
-## Status
+Run one small menu-bar app on your Mac, open the shown URL (or scan the QR) in
+your phone's browser, and your phone becomes a precise trackpad + keyboard +
+media remote. No App Store, no account, no cloud — everything stays on your LAN.
 
-**Slice 6 — clipboard sync + media keys.** A 📋 panel syncs the clipboard both
-ways: the Mac's clipboard is pushed to the phone live (NSPasteboard polled every
-500ms, and on pairing), with a Copy button; phone→Mac is a paste-and-Send field
-(no async Clipboard API on http://*.local, so the push direction is manual). A
-🎵 panel sends play/pause, prev/next, volume ±, mute, and brightness ± as macOS
-system keys (NSSystemDefined events). New opcode `OP_MEDIA` (0x12);
-`OP_CLIPBOARD_SET` (0x20) now flows both directions and syncs across multiple
-paired phones. This is the last Phase 1 functional slice.
+![Platform](https://img.shields.io/badge/macOS-13%2B-black)
+![Phone](https://img.shields.io/badge/phone-any%20browser-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-**Slice 5 — keyboard + voice + modifiers.** A ⌨ toggle opens a keyboard panel:
-a native text field (so the phone's own keyboard — and its 🎤 dictation button —
-drive it) streams typing/dictation as unicode text (`OP_TEXT`), a row of special
-keys (Esc/Tab/⌫/Return/arrows) sends `OP_KEY`, and sticky modifiers (⌃⌥⇧⌘)
-combine with the next key for combos like ⌘C / ⌘Tab. Text is typed on the Mac via
-`CGEventKeyboardSetUnicodeString` (layout-independent, exact for dictated
-phrases).
+---
 
-**Slice 4 — menu bar + QR + Spaces gesture.** A menu-bar icon (🖱) shows the
-connect URL, the pairing code, connected-phone count, and a live Accessibility
-status with a one-click Grant button; "Show QR code" opens a QR encoding the URL
-+ code so the phone scans straight onto the paired trackpad; "Unpair all phones"
-clears the token store. The server now runs in a background thread so rumps owns
-the main thread (set `LANTRACKPAD_NO_MENUBAR=1` to run headless). New gesture:
-**three-finger horizontal swipe switches Desktops/Spaces** (mapped to macOS's
-⌃←/⌃→). This introduced the `key` opcode (0x11) and `web/keymap.js`, the single
-JS-name → kVK_ table the keyboard slice builds on.
+## Why this one
 
-**Slice 2 — full pointer + gestures.** On top of the moving cursor:
+Most "phone as mouse" tools make you install an app on **both** the computer
+**and** the phone, and many route your input through their servers.
 
-- one-finger **tap = left click** (two quick taps = double-click, via server
-  click-state); **two-finger tap = right click**
-- **two-finger scroll with inertia** (momentum runs on the phone, so it feels
-  right regardless of Wi-Fi latency)
-- **tap-and-a-half drag lock**: tap, then touch-and-drag holds the button; lift
-  and it stays locked (amber border) until you tap to drop
-- drags emit real *Dragged* events (text selection, window moves work)
-- **release-all safety** on every disconnect path: socket close (server-side)
-  and page-hide / phone-lock (client-side) both force every button up
+LAN Trackpad is deliberately smaller:
 
-**Pairing (Slice 3).** The Mac prints a fresh 6-digit code on launch; the phone
-enters it once. On success the Mac issues a long-lived token the phone stores, so
-it never re-prompts (reconnects re-pair silently). Unpaired clients can't drive
-input — enforced server-side. Wrong codes keep the socket open to retry (error
-stays visible), capped at 5 tries per connection. Tokens live in
-`~/.lantrackpad/tokens.json` (0600); delete it to un-pair every phone.
+| | LAN Trackpad | Typical alternatives |
+|---|---|---|
+| **Install on phone** | ❌ none — just a browser | ✅ app required (App Store / Play) |
+| **Install on Mac** | ✅ one tiny menu-bar app | ✅ app required |
+| **Cloud / account** | ❌ never — 100% local LAN | ⚠️ often cloud relay + sign-in |
+| **Works offline** | ✅ even over a phone hotspot | ⚠️ frequently needs internet |
+| **Cost / source** | ✅ free & open-source | ⚠️ freemium / closed |
 
-A hidden dev panel (append `?dev=1` or triple-tap the top-left corner) exposes
-live sliders for accel `k`, cap, deadzone, scroll multiplier, plus a round-trip
-latency readout. Keyboard, voice, clipboard, QR, and the menu bar come in later
-slices.
+- **Fully local.** No relay server, no account, no telemetry, no WebRTC. Your
+  input never leaves your network. Works with **zero internet** — connect the
+  Mac to your phone's hotspot and it still works.
+- **Zero-install phone side.** Any phone with a modern browser: iOS Safari,
+  Android Chrome. Nothing to update or trust on the phone.
+- **Connect in seconds.** Same Wi-Fi → scan the QR → you're driving the Mac.
 
-## Install as an app (recommended)
+## Features
 
-Build a self-contained `LAN Trackpad.app` + `.dmg` you can keep in
-`/Applications` instead of running `make run` each time:
+- **Trackpad** — smooth pointer with tunable acceleration, tap to click,
+  two-finger tap = right-click, two-finger scroll **with inertia**, and
+  tap-and-a-half **drag-lock**. Multi-monitor aware.
+- **Three-finger swipe** left/right to switch **Desktops / Spaces**.
+- **Keyboard** — type with the phone's own keyboard, **voice dictation** via its
+  mic, special keys (Esc/Tab/⌫/Return/arrows), and sticky **⌘⌃⌥⇧ combos** (⌘C,
+  ⌘Tab, …).
+- **Clipboard sync**, both directions.
+- **Media keys** — play/pause, prev/next, volume, mute, brightness.
+- **Secure enough for a LAN** — a 6-digit pairing code (embedded in the QR);
+  paired phones are remembered so they never re-prompt.
+
+## Quick start
+
+1. **Install the Mac app.** Grab the latest `.dmg` from
+   [Releases](../../releases), drag **LAN Trackpad** to Applications, and launch
+   it — it lives in the menu bar (🖱).
+   *(Or run from source — see [Development](#development).)*
+2. **Grant Accessibility** once (the menu's "Grant Accessibility" item). macOS
+   requires this to move the cursor and type.
+3. **On your phone** (same Wi-Fi): open the menu's **Show QR code** and scan it,
+   or type the shown URL. Enter the 6-digit code the first time — that's it.
+
+> First launch blocked by Gatekeeper? The public build is ad-hoc signed (no paid
+> Apple account). Right-click the app → **Open** once, or run
+> `xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`.
+
+**Always-on:** System Settings → General → Login Items → add *LAN Trackpad*.
+
+## No internet? Use a hotspot
+
+No Wi-Fi anywhere? Turn on your phone's **personal hotspot**, connect the Mac to
+it, and open the URL — the two devices share the hotspot LAN, so everything works
+with no internet at all.
+
+## Privacy & security
+
+- LAN only. Input is sent directly from your phone to your Mac over your local
+  network — never to any third party.
+- The only access control is the pairing code/token; that's intentional and
+  appropriate for a same-network personal tool. Don't expose the port to the
+  public internet.
+
+## Development
+
+Requires macOS 13+ and Python 3.12. The phone client is vanilla HTML/CSS/JS —
+no build step.
 
 ```bash
-make dmg
+make run     # dev server (run it from a terminal that has Accessibility granted)
+make app     # a dev .app you can grant Accessibility to directly
+make dmg     # build the self-contained, installable .app + .dmg
 ```
 
-Then open `dist/LAN-Trackpad.dmg`, drag **LAN Trackpad** to Applications, and
-launch it — it lives in the menu bar (🖱). Grant it Accessibility once
-(the menu's "Grant Accessibility" item, or System Settings › Privacy & Security
-› Accessibility). The bundle is self-contained (its own Python + deps); it does
-not need this repo or the venv to run.
+The Mac side is a single Python process: aiohttp serves the client and a
+WebSocket on one port, input is synthesized via pyobjc/Quartz `CGEvent`, and the
+menu bar is `rumps`. The wire protocol lives in one place — `server/protocol.py`
+— and `make proto` regenerates the client's `web/protocol.js` mirror so the two
+sides can never drift.
 
-**Always-on:** System Settings › General › Login Items › **+** › add
-*LAN Trackpad*. Now it starts with your Mac and is always in the menu bar.
+> **Building requires a Mac.** PyInstaller doesn't cross-compile and the app uses
+> macOS-only frameworks + `codesign`/`hdiutil`, so a `.dmg` cannot be built on
+> Linux/Raspberry Pi — build locally on a Mac or on a macOS CI runner.
 
-**Gatekeeper:** the local build is ad-hoc signed (no Apple Developer account
-needed). If macOS blocks the first launch, right-click the app › Open once, or:
-`xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`. For real
-distribution, set `CODESIGN_IDENTITY` (a Developer ID) and `NOTARY_PROFILE` and
-re-run — `scripts/build.sh` will Developer ID-sign and notarize instead. Note:
-each ad-hoc rebuild changes the app's identity, so Accessibility must be
-re-granted after a rebuild; a Developer ID signature keeps it stable.
+Releases are built and published automatically by GitHub Actions on a
+`macos` runner when a `v*` tag is pushed (see `.github/workflows/release.yml`).
 
-## Run (dev)
+## Roadmap
 
-```bash
-make run
-```
+- User-editable shortcut grid (JSON-defined).
+- App-aware layouts: the Mac detects the frontmost app and the phone swaps its
+  controls (Keynote → slide controls, video → scrub bar, …). The protocol
+  already reserves a layout-hint message for this.
 
-First launch will tell you if **Accessibility permission** is missing — grant it
-to whatever runs the server (your terminal app for `make run`), otherwise macOS
-silently drops synthesized events and the cursor won't move.
+## License
 
-Then open the printed `http://<hostname>.local:8787/` on a phone on the same
-Wi-Fi. (If `.local` doesn't resolve, use the printed IP URL.)
-
-## Tuning the cursor feel
-
-Pointer feel is owned by the client — a permanent per-user feature, not a
-build-time setting. Open the dev panel on the phone (`?dev=1` or triple-tap the
-top-left corner) and adjust the sliders until it feels right; each phone persists
-its own curve in `localStorage`. **copy config** dumps the JSON so you can back
-up a good curve or seed a fresh phone's first-run defaults (in `web/app.js`
-`DEFAULTS`).
-
-## Layout
-
-- `server/protocol.py` — the opcode table, single source of truth. Run
-  `make proto` to regenerate `web/protocol.js`; never edit that file by hand.
-- `server/` — aiohttp HTTP+WS server, Quartz input synthesis, display clamp.
-- `web/` — the phone client (vanilla HTML/CSS/JS, no build step).
-
-## Constraints
-
-LAN only. No cloud/relay/accounts/WebRTC. Works with zero internet. macOS 13+,
-iOS Safari 16+, Chrome on Android.
+MIT — see [LICENSE](LICENSE).

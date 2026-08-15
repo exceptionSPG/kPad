@@ -1,0 +1,46 @@
+name: Release
+
+# Build the .dmg on a macOS runner and publish a GitHub Release whenever a
+# version tag is pushed. macOS runners are free for public repositories.
+#
+#   git tag -a v0.2.0 -m "v0.2.0" && git push origin v0.2.0
+#
+# The build is ad-hoc signed (no Apple Developer account needed). To ship a
+# Developer ID-signed + notarized build instead, add repo secrets and pass them
+# through to scripts/build.sh via env (CODESIGN_IDENTITY / NOTARY_PROFILE) — see
+# the commented block below.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}     # allow manual runs from the Actions tab
+
+permissions:
+  contents: write           # needed to create the Release
+
+jobs:
+  build:
+    runs-on: macos-latest   # Apple Silicon; matches the arm64 target
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build .app + .dmg
+        run: make dmg
+        # env:
+        #   CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+        #   NOTARY_PROFILE: ${{ secrets.NOTARY_PROFILE }}
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/LAN-Trackpad.dmg
+          generate_release_notes: true
+          body: |
+            Local build is ad-hoc signed (no paid Apple account). If macOS blocks
+            first launch: right-click the app → Open, or
+            `xattr -dr com.apple.quarantine "/Applications/LAN Trackpad.app"`.
