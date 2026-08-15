@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kPad — turn any phone into a trackpad for your Mac</title>
+<meta name="description" content="kPad turns any phone into a trackpad, keyboard, and remote for your Mac — over your local network, with nothing to install on the phone. Fully local, open-source, free.">
+<meta name="theme-color" content="#0e0f13">
+<meta property="og:title" content="kPad — your phone as a Mac trackpad">
+<meta property="og:description" content="Fully local. No phone app. No cloud. Open-source. Scan a QR and go.">
+<meta property="og:image" content="icon.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="icon.png">
+<style>
+  :root{
+    --bg:#0e0f13; --bg2:#12141d; --card:#171922; --line:#262a3a;
+    --fg:#e7e9ee; --muted:#8b90a0; --ok:#35c46a; --ok2:#1fa855;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    padding:13px 22px; border-radius:12px; font-weight:600; font-size:15px;
+    border:1px solid var(--line);
+  }
+  .btn.primary{background:var(--ok); color:#06210f; border-color:var(--ok)}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent; color:var(--fg)}
+  .btn.ghost:hover{border-color:var(--muted)}
+  .muted{color:var(--muted)}
+
+  /* nav */
+  nav{position:sticky; top:0; z-index:10; background:rgba(14,15,19,.8);
+    backdrop-filter:saturate(160%) blur(10px); border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex; align-items:center; gap:12px; height:62px}
+  nav img{width:30px; height:30px; border-radius:8px}
+  nav .name{font-weight:700; letter-spacing:.2px}
+  nav .spacer{margin-left:auto}
+  nav .links{display:flex; gap:10px; align-items:center}
+  @media(max-width:560px){ nav .ghost{display:none} }
+
+  /* hero */
+  .hero{text-align:center; padding:74px 0 40px}
+  .hero .icon{width:112px; height:112px; border-radius:26px;
+    box-shadow:0 20px 60px rgba(53,196,106,.28); }
+  .hero h1{font-size:clamp(38px,7vw,64px); margin:22px 0 6px; letter-spacing:-1px}
+  .hero .tag{font-size:clamp(18px,3.2vw,23px); max-width:640px; margin:0 auto; color:#d6d9e2}
+  .hero .tag b{color:var(--ok)}
+  .by{margin-top:8px; color:var(--muted); font-style:italic}
+  .cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:30px 0 12px}
+  .subnote{color:var(--muted); font-size:13.5px}
+
+  /* pills */
+  .pills{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:26px 0 6px}
+  .pill{border:1px solid var(--line); background:var(--card); color:#cfd3df;
+    padding:7px 14px; border-radius:999px; font-size:13.5px}
+  .pill b{color:var(--ok)}
+
+  section{padding:56px 0}
+  .h2{font-size:clamp(26px,4vw,34px); margin:0 0 6px; text-align:center; letter-spacing:-.5px}
+  .sub{color:var(--muted); text-align:center; max-width:620px; margin:0 auto 34px}
+
+  /* why cards */
+  .grid{display:grid; gap:16px}
+  .why{grid-template-columns:repeat(4,1fr)}
+  .cards3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:860px){ .why{grid-template-columns:repeat(2,1fr)} .cards3{grid-template-columns:1fr} }
+  @media(max-width:560px){ .why{grid-template-columns:1fr} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px}
+  .card .emoji{font-size:24px}
+  .card h3{margin:12px 0 6px; font-size:17px}
+  .card p{margin:0; color:var(--muted); font-size:14.5px}
+
+  /* screenshots */
+  .shots{display:flex; gap:26px; justify-content:center; flex-wrap:wrap}
+  .phone{width:250px}
+  .frame{
+    border-radius:34px; padding:10px; background:#05060a;
+    border:1px solid #23262f; box-shadow:0 30px 70px rgba(0,0,0,.55);
+  }
+  .frame .screen{
+    border-radius:26px; overflow:hidden; aspect-ratio:9/19.5; background:var(--bg2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .frame .screen img{width:100%; height:100%; object-fit:cover; display:block}
+  .frame .ph{color:var(--muted); font-size:13px; text-align:center; padding:20px}
+  .phone .cap{text-align:center; color:#cfd3df; margin-top:14px; font-size:14.5px; font-weight:600}
+  .phone .cap span{display:block; color:var(--muted); font-weight:400; font-size:13px}
+
+  /* steps */
+  .steps{counter-reset:s; display:grid; gap:16px; grid-template-columns:repeat(3,1fr)}
+  @media(max-width:860px){ .steps{grid-template-columns:1fr} }
+  .step{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; position:relative}
+  .step::before{counter-increment:s; content:counter(s);
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:10px; background:var(--ok); color:#06210f; font-weight:800; margin-bottom:12px}
+  .step h3{margin:0 0 6px; font-size:17px}
+  .step p{margin:0; color:var(--muted); font-size:14.5px}
+  .note{max-width:720px; margin:22px auto 0; color:var(--muted); font-size:13.5px; text-align:center;
+    border:1px dashed var(--line); border-radius:12px; padding:12px 16px}
+  .note code{background:var(--bg2); padding:2px 6px; border-radius:6px; color:#cfd3df}
+
+  .final{text-align:center; background:linear-gradient(180deg,transparent,rgba(53,196,106,.06)); border-top:1px solid var(--line)}
+
+  footer{border-top:1px solid var(--line); padding:32px 0; color:var(--muted); font-size:14px}
+  footer .wrap{display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between}
+  footer a{color:#cfd3df; text-decoration:none}
+  footer a:hover{color:var(--ok)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <img src="icon.png" alt="kPad">
+    <span class="name">kPad</span>
+    <span class="muted" style="font-size:13px">by Kailaba</span>
+    <span class="spacer"></span>
+    <div class="links">
+      <a class="btn ghost" href="https://github.com/exceptionspg/kpad">GitHub</a>
+      <a class="btn primary" href="https://github.com/exceptionspg/kpad/releases/latest">Download</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="icon" src="icon.png" alt="kPad icon">
+    <h1>kPad</h1>
+    <p class="tag">Turn any phone into a <b>trackpad, keyboard &amp; remote</b> for your Mac — over your local network, with <b>nothing to install on the phone</b>.</p>
+    <p class="by">by Kailaba</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/exceptionspg/kpad/releases/latest">↓ Download for Mac</a>
+      <a class="btn ghost" href="https://github.com/exceptionspg/kpad">★ Star on GitHub</a>
+    </div>
+    <p class="subnote">Free &amp; open-source · macOS 13+ · your phone just needs a browser</p>
+    <div class="pills">
+      <span class="pill"><b>No</b> phone app</span>
+      <span class="pill"><b>100%</b> local — no cloud</span>
+      <span class="pill">Works <b>offline</b></span>
+      <span class="pill">Open-source</span>
+    </div>
+  </div>
+</header>
+
+<section id="why">
+  <div class="wrap">
+    <h2 class="h2">Why kPad</h2>
+    <p class="sub">Most "phone as mouse" tools want an app on both devices and route your input through their servers. kPad doesn't.</p>
+    <div class="grid why">
+      <div class="card"><div class="emoji">📵</div><h3>No app on your phone</h3><p>Just open a URL or scan the QR in any browser — iOS Safari, Android Chrome. Nothing to install or update.</p></div>
+      <div class="card"><div class="emoji">🔒</div><h3>Fully local</h3><p>No relay server, no account, no telemetry. Your input never leaves your network.</p></div>
+      <div class="card"><div class="emoji">✈️</div><h3>Works offline</h3><p>Zero internet needed — connect the Mac to your phone's hotspot and it still works.</p></div>
+      <div class="card"><div class="emoji">💚</div><h3>Free &amp; open</h3><p>Open-source under MIT. Build it yourself or grab the signed-in-spirit release.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="background:var(--bg2); border-top:1px solid var(--line); border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <h2 class="h2">Everything you'd reach for</h2>
+    <p class="sub">A real trackpad — plus the keys and remotes you actually use.</p>
+    <div class="grid why">
+      <div class="card"><div class="emoji">🖱️</div><h3>Precise trackpad</h3><p>Tunable acceleration, tap &amp; right-click, two-finger scroll with inertia, drag-lock. Multi-monitor aware.</p></div>
+      <div class="card"><div class="emoji">⌨️</div><h3>Keyboard &amp; voice</h3><p>Type with your phone's keyboard, dictate with its mic, and fire ⌘-combos like ⌘C / ⌘Tab.</p></div>
+      <div class="card"><div class="emoji">📋</div><h3>Clipboard sync</h3><p>Copy on the Mac, paste on the phone — and back again. Both directions.</p></div>
+      <div class="card"><div class="emoji">🎵</div><h3>Media &amp; volume</h3><p>Play/pause, next/prev, volume, mute, brightness — right from your hand.</p></div>
+      <div class="card"><div class="emoji">🖐️</div><h3>Three-finger swipe</h3><p>Swipe to switch Desktops / Spaces, just like a real trackpad.</p></div>
+      <div class="card"><div class="emoji">🔑</div><h3>Simple pairing</h3><p>A 6-digit code in the QR. Paired phones are remembered — scan once, done.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2 class="h2">See it</h2>
+    <p class="sub">Real screens, running in a plain phone browser.</p>
+    <div class="shots">
+      <div class="phone">
+        <div class="frame"><div class="screen"><img src="img/01-pair.png" alt="Pairing screen" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=ph>img/01-pair.png</div>'"></div></div>
+        <div class="cap">Scan &amp; pair<span>6-digit code, once</span></div>
+      </div>
+      <div class="phone">
+        <div class="frame"><div class="screen"><img src="img/02-keyboard.png" alt="Keyboard screen" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=ph>img/02-keyboard.png</div>'"></div></div>
+        <div class="cap">Type &amp; dictate<span>keyboard + voice + ⌘-combos</span></div>
+      </div>
+      <div class="phone">
+        <div class="frame"><div class="screen"><img src="img/03-media.png" alt="Media screen" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=ph>img/03-media.png</div>'"></div></div>
+        <div class="cap">Media &amp; clipboard<span>volume, tracks, brightness</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="background:var(--bg2); border-top:1px solid var(--line); border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <h2 class="h2">Up and running in a minute</h2>
+    <p class="sub">One tiny app on the Mac. Your phone just needs a browser.</p>
+    <div class="steps">
+      <div class="step"><h3>Install the Mac app</h3><p>Download kPad, drag it to Applications, and launch — it lives in the menu bar.</p></div>
+      <div class="step"><h3>Grant Accessibility</h3><p>One click from the menu. macOS needs this to move the cursor and type.</p></div>
+      <div class="step"><h3>Scan the QR</h3><p>On the same Wi-Fi, scan the QR from the menu bar. That's it — your phone is a trackpad.</p></div>
+    </div>
+    <p class="note">The public build is ad-hoc signed (free &amp; open-source). If macOS blocks first launch, open it via <b>System Settings → Privacy &amp; Security → Open Anyway</b>, or run <code>xattr -dr com.apple.quarantine "/Applications/kPad.app"</code>.</p>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2 class="h2">Your phone. Your Mac. Nothing in between.</h2>
+    <p class="sub">Same Wi-Fi → scan the QR → go.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/exceptionspg/kpad/releases/latest">↓ Download for Mac</a>
+      <a class="btn ghost" href="https://github.com/exceptionspg/kpad">View source</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Kailaba · kPad · MIT licensed</span>
+    <span>
+      <a href="https://github.com/exceptionspg/kpad">GitHub</a> ·
+      <a href="https://github.com/exceptionspg/kpad/releases/latest">Releases</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
