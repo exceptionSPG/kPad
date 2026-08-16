@@ -10,30 +10,16 @@
   const present = document.getElementById("present");
   const toggle = document.getElementById("presentToggle");
 
-  const notesEl = document.getElementById("notes");
-
   function isOpen() { return !present.classList.contains("hidden"); }
   function open() {
     window.dispatchEvent(new CustomEvent("panel-open", { detail: "present" }));
     present.classList.remove("hidden");
     toggle.classList.add("on");
-    NET.notesSub(true);          // ask the Mac to stream Keynote notes
   }
-  function close() {
-    present.classList.add("hidden");
-    toggle.classList.remove("on");
-    NET.notesSub(false);         // stop the notes poll on the Mac
-  }
+  function close() { present.classList.add("hidden"); toggle.classList.remove("on"); }
   toggle.addEventListener("click", () => (isOpen() ? close() : open()));
   document.getElementById("presentDone").addEventListener("click", close);
   window.addEventListener("panel-open", (e) => { if (e.detail !== "present" && isOpen()) close(); });
-
-  // Incoming speaker notes for the current slide.
-  window.addEventListener("slide-notes", function (e) {
-    const t = (e.detail || "").trim();
-    notesEl.textContent = t || "(no notes for this slide)";
-    notesEl.scrollTop = 0;
-  });
 
   const KEYS = {
     prev: KVK.ArrowLeft,
