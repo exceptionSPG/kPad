@@ -142,26 +142,33 @@ class MacInput:
             self._buttons_down.discard(button)
 
     # ----------------------------------------------------------------- key --
+    def _post_key(self, keycode, is_down, flags):
+        ev = Quartz.CGEventCreateKeyboardEvent(None, keycode, is_down)
+        Quartz.CGEventSetFlags(ev, flags)
+        self._post(ev)
+
     def key(self, keycode: int, modifiers: int):
-        """Tap `keycode` (kVK_*) with `modifiers` (MOD_* bitmask). We press the
-        modifiers as real keys (with flags), then the key, then release — more
-        hardware-like, so system hotkeys such as Ctrl+Arrow "move a space" fire
-        reliably (flags-only events are sometimes ignored by those handlers).
-        Self-contained down+up, so nothing can get stuck."""
-        flags = _cg_flags(modifiers)
-        mod_kvs = [kv for bit, kv in _MOD_KV.items() if modifiers & bit]
-        for kv in mod_kvs:                       # press modifiers
-            ev = Quartz.CGEventCreateKeyboardEvent(None, kv, True)
-            Quartz.CGEventSetFlags(ev, flags)
-            self._post(ev)
-        for is_down in (True, False):            # the key itself
-            ev = Quartz.CGEventCreateKeyboardEvent(None, keycode, is_down)
-            if flags:
-                Quartz.CGEventSetFlags(ev, flags)
-            self._post(ev)
-        for kv in reversed(mod_kvs):             # release modifiers
-            ev = Quartz.CGEventCreateKeyboardEvent(None, kv, False)
-            self._post(ev)
+        """Tap `keycode` (kVK_*) with `modifiers` (MOD_* bitmask).
+
+        The modifiers are pressed as REAL keys — flags-only events leave macOS's
+        modifier state inconsistent (Control could stay "stuck", turning later
+        left-clicks into right-clicks) and system hotkeys like Ctrl+Arrow
+        "move a space" ignore them. We build the modifier flags up on the way in
+        and tear them fully down on the way out, so nothing is left held."""
+        # Press modifiers, accumulating the flag mask as each goes down.
+        active = 0
+        for bit, kv in _MOD_KV.items():
+            if modifiers & bit:
+                active |= _MOD_FLAG[bit]
+                self._post_key(kv, True, active)
+        # The key itself, with all modifiers held.
+        self._post_key(keycode, True, active)
+        self._post_key(keycode, False, active)
+        # Release modifiers in reverse, clearing each flag as it lifts (ends at 0).
+        for bit, kv in reversed(list(_MOD_KV.items())):
+            if modifiers & bit:
+                active &= ~_MOD_FLAG[bit]
+                self._post_key(kv, False, active)
 
     # --------------------------------------------------------------- media --
     def media(self, media_id: int):
@@ -204,6 +211,10 @@ class MacInput:
         for button in (P.BTN_LEFT, P.BTN_RIGHT, P.BTN_MIDDLE):
             ev = Quartz.CGEventCreateMouseEvent(None, _UP_TYPE[button], (x, y), _BTN_CG[button])
             self._post(ev)
+        # Defensively lift every modifier key too, so a stuck Control/Command
+        # (which would turn left-clicks into right-clicks, etc.) can't survive.
+        for kv in _MOD_KV.values():
+            self._post_key(kv, False, 0)
         self._buttons_down.clear()
         self._mods_down = 0
         self._click_state = 0
