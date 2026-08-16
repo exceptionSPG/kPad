@@ -63,6 +63,16 @@ _MOD_FLAG = {
     P.MOD_FN: Quartz.kCGEventFlagMaskSecondaryFn,
 }
 
+# MOD_* bitmask -> kVK_ modifier keycode, so we can press the modifier as a real
+# key (some system hotkeys, e.g. "move a space", ignore flags-only events).
+_MOD_KV = {
+    P.MOD_SHIFT: 0x38,     # kVK_Shift
+    P.MOD_CONTROL: 0x3B,   # kVK_Control
+    P.MOD_OPTION: 0x3A,    # kVK_Option
+    P.MOD_COMMAND: 0x37,   # kVK_Command
+    P.MOD_FN: 0x3F,        # kVK_Function
+}
+
 
 def _cg_flags(modifiers: int) -> int:
     flags = 0
@@ -133,14 +143,24 @@ class MacInput:
 
     # ----------------------------------------------------------------- key --
     def key(self, keycode: int, modifiers: int):
-        """Tap a key (down+up) with modifier flags set on the event. Self-
-        contained, so no modifier can get stuck from a combo. `keycode` is a
-        macOS virtual keycode (kVK_*); `modifiers` is a MOD_* bitmask."""
+        """Tap `keycode` (kVK_*) with `modifiers` (MOD_* bitmask). We press the
+        modifiers as real keys (with flags), then the key, then release — more
+        hardware-like, so system hotkeys such as Ctrl+Arrow "move a space" fire
+        reliably (flags-only events are sometimes ignored by those handlers).
+        Self-contained down+up, so nothing can get stuck."""
         flags = _cg_flags(modifiers)
-        for is_down in (True, False):
+        mod_kvs = [kv for bit, kv in _MOD_KV.items() if modifiers & bit]
+        for kv in mod_kvs:                       # press modifiers
+            ev = Quartz.CGEventCreateKeyboardEvent(None, kv, True)
+            Quartz.CGEventSetFlags(ev, flags)
+            self._post(ev)
+        for is_down in (True, False):            # the key itself
             ev = Quartz.CGEventCreateKeyboardEvent(None, keycode, is_down)
             if flags:
                 Quartz.CGEventSetFlags(ev, flags)
+            self._post(ev)
+        for kv in reversed(mod_kvs):             # release modifiers
+            ev = Quartz.CGEventCreateKeyboardEvent(None, kv, False)
             self._post(ev)
 
     # --------------------------------------------------------------- media --
