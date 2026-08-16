@@ -45,8 +45,8 @@ app = BUNDLE(
     info_plist={
         "LSUIElement": True,                 # menu-bar only, no Dock icon
         "LSMinimumSystemVersion": "13.0",
-        "CFBundleShortVersionString": "0.2.6",
-        "CFBundleVersion": "8",
+        "CFBundleShortVersionString": "0.2.7",
+        "CFBundleVersion": "9",
         "NSHighResolutionCapable": True,
     },
 )

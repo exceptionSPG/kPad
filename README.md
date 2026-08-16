@@ -48,7 +48,6 @@ deliberately smaller:
 - **Trackpad** — smooth pointer with tunable acceleration, tap to click,
   two-finger tap = right-click, two-finger scroll **with inertia**, and
   tap-and-a-half **drag-lock**. Multi-monitor aware.
-- **Three-finger swipe** left/right to switch **Desktops / Spaces**.
 - **Keyboard** — type with the phone's own keyboard, **voice dictation** via its
   mic, special keys (Esc/Tab/⌫/Return/arrows), and sticky **⌘⌃⌥⇧ combos**.
 - **Clipboard sync**, both directions.

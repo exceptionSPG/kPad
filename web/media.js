@@ -22,12 +22,4 @@
   media.querySelectorAll("button[data-media]").forEach(function (btn) {
     btn.addEventListener("click", () => NET.media(PROTO[btn.dataset.media]));
   });
-
-  // Desktop / Space switch = the macOS "Move a space" shortcut (Ctrl+Arrow).
-  media.querySelectorAll("button[data-space]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const kc = btn.dataset.space === "next" ? window.KVK.ArrowRight : window.KVK.ArrowLeft;
-      NET.key(kc, PROTO.MOD_CONTROL);
-    });
-  });
 })();
