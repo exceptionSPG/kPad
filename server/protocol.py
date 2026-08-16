@@ -32,6 +32,7 @@ OP_SCROLL        = 0x03  # sx:i16, sy:i16
 OP_TEXT          = 0x10  # utf8 bytes (typing / native dictation)
 OP_KEY           = 0x11  # keycode:u16 (kVK_*), modifiers:u16 (MOD_* bitmask)
 OP_MEDIA         = 0x12  # media/system key: key:u8 (see MEDIA_*)
+OP_NOTES_SUB     = 0x13  # subscribe to presenter notes: on:u8 (1=on,0=off)
 OP_CLIPBOARD_SET = 0x20  # utf8 (bidirectional; also Server -> Client)
 OP_PING          = 0x40  # seq:u32   (client latency probe)
 OP_PAIR          = 0x7E  # utf8: 6-digit code or stored token (MUST be 1st frame)
@@ -39,6 +40,7 @@ OP_HELLO         = 0x7F  # utf8 JSON {name, caps}
 
 # Server -> Client
 OP_LAYOUT_HINT   = 0x30  # utf8 JSON (Phase 2 app-aware layouts)
+OP_NOTES         = 0x31  # utf8 presenter notes for the current slide
 OP_PONG          = 0x41  # seq:u32   (echo of OP_PING)
 OP_PAIR_RESULT   = 0x7D  # ok:u8 (0=ok,1=reject) [+ token utf8 when ok]
 OP_ERROR         = 0x7C  # utf8
@@ -98,6 +100,9 @@ def frame_pong(seq: int) -> bytes:
 
 def frame_clipboard(text: str) -> bytes:
     return bytes([OP_CLIPBOARD_SET]) + text.encode("utf-8")
+
+def frame_notes(text: str) -> bytes:
+    return bytes([OP_NOTES]) + text.encode("utf-8")
 
 def frame_pair_result(ok: bool, token: str = "") -> bytes:
     return bytes([OP_PAIR_RESULT, 0 if ok else 1]) + token.encode("utf-8")

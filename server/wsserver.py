@@ -38,6 +38,9 @@ class Server:
         self.stats = stats if stats is not None else {"clients": 0}
         self._clients = set()   # active WebSocketResponse objects
         self._paired = set()    # paired connections (clipboard broadcast targets)
+        self._notes_subs = set()  # clients showing the presenter notes
+        self._notes_task = None
+        self._last_notes_key = None
         self._loop = None       # the server thread's event loop
 
     # ----------------------------------------------------------- handlers --
@@ -67,6 +70,7 @@ class Server:
         finally:
             self._clients.discard(ws)
             self._paired.discard(ws)
+            self._notes_subs.discard(ws)
             self.stats["clients"] = max(0, self.stats.get("clients", 1) - 1)
             # SAFETY INVARIANT: never leave a button/modifier stuck.
             self.inp.release_all()
@@ -145,6 +149,13 @@ class Server:
             self.inp.text(P.payload(data).decode("utf-8", "replace"))
         elif op == P.OP_MEDIA:
             self.inp.media(P.read_media(data))
+        elif op == P.OP_NOTES_SUB:
+            if len(data) > 1 and data[1]:
+                self._notes_subs.add(ws)
+                self._last_notes_key = None      # re-send current notes
+                self._ensure_notes_poll()
+            else:
+                self._notes_subs.discard(ws)
         elif op == P.OP_CLIPBOARD_SET:
             text = P.payload(data).decode("utf-8", "replace")
             if self.clipboard:
@@ -167,6 +178,34 @@ class Server:
         except (AttributeError, RuntimeError):
             pass
         return resp
+
+    def _ensure_notes_poll(self):
+        if self._notes_task is None or self._notes_task.done():
+            self._notes_task = asyncio.ensure_future(self._notes_poll())
+
+    async def _notes_poll(self):
+        # Poll the current slide's notes (~1s) while any client is subscribed,
+        # and push them when the slide changes.
+        from .notes import read_current_notes
+        loop = asyncio.get_event_loop()
+        while self._notes_subs:
+            try:
+                res = await loop.run_in_executor(None, read_current_notes)
+                if res is not None:
+                    num, text = res
+                    if num != self._last_notes_key:
+                        self._last_notes_key = num
+                        data = P.frame_notes(text)
+                        for ws in list(self._notes_subs):
+                            try:
+                                await ws.send_bytes(data)
+                            except Exception:
+                                pass
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                pass
+            await asyncio.sleep(1.0)
 
     async def _clip_poll(self):
         # Mac -> phone: watch the clipboard and push changes to paired phones.

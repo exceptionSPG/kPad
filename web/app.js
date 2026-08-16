@@ -68,6 +68,9 @@
   function frameMedia(id) {
     return new Uint8Array([PROTO.OP_MEDIA, id & 0xff]).buffer;
   }
+  function frameNotesSub(on) {
+    return new Uint8Array([PROTO.OP_NOTES_SUB, on ? 1 : 0]).buffer;
+  }
   function frameClipboard(str) {
     const bytes = new TextEncoder().encode(str);
     const b = new Uint8Array(1 + bytes.length);
@@ -201,6 +204,11 @@
       if (op === PROTO.OP_CLIPBOARD_SET) {
         const text = new TextDecoder().decode(new Uint8Array(ev.data, 1));
         window.dispatchEvent(new CustomEvent("mac-clipboard", { detail: text }));
+        return;
+      }
+      if (op === PROTO.OP_NOTES) {
+        const text = new TextDecoder().decode(new Uint8Array(ev.data, 1));
+        window.dispatchEvent(new CustomEvent("slide-notes", { detail: text }));
       }
     };
     ws.onclose = function () {
@@ -242,6 +250,7 @@
     text: (str) => { if (paired && str) send(frameText(str)); },
     media: (id) => { if (paired) send(frameMedia(id)); },
     clipboard: (str) => { if (paired && str) send(frameClipboard(str)); },
+    notesSub: (on) => { if (paired) send(frameNotesSub(on)); },
     // Safety: let go of every button (used on page-hide / phone-lock, when the
     // socket may still be open so the server's own release_all hasn't fired).
     releaseButtons: () => {

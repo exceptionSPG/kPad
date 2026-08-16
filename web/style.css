@@ -92,7 +92,7 @@ html, body {
 .panel.hidden { display: none; }
 
 /* Presenter panel */
-.presentBig { display: flex; gap: 12px; flex: 1; min-height: 220px; }
+.presentBig { display: flex; gap: 12px; min-height: 160px; flex: 0 0 auto; }
 .presentBig button {
   flex: 1;
   border: 1px solid #2a2f42;
@@ -120,6 +120,20 @@ html, body {
   padding: 16px 0;
 }
 .presentRow button:active { background: var(--pad-active); }
+.notes {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #2a2f42;
+  border-radius: 12px;
+  background: #12141d;
+  color: var(--fg);
+  padding: 14px 16px;
+  font-size: 17px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
 
 /* Media panel */
 .mediaRow { display: flex; gap: 10px; }
