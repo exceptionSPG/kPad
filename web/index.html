@@ -16,12 +16,27 @@
     <span id="dot" class="dot"></span>
     <span id="statusText">connecting…</span>
     <span id="rtt" class="rtt"></span>
+    <button id="presentToggle" class="barBtn" aria-label="presenter">📽️</button>
     <button id="mediaToggle" class="barBtn" aria-label="media keys">🎵</button>
     <button id="clipToggle" class="barBtn" aria-label="clipboard">📋</button>
     <button id="kbdToggle" class="barBtn" aria-label="keyboard">⌨</button>
   </header>
 
   <main id="pad" aria-label="trackpad surface"></main>
+
+  <!-- Presenter: drive any slideshow (Keynote / PowerPoint / PDF / Slides) -->
+  <section id="present" class="panel hidden">
+    <div class="presentBig">
+      <button data-pkey="prev">‹<span>Prev</span></button>
+      <button data-pkey="next">›<span>Next</span></button>
+    </div>
+    <div class="presentRow">
+      <button data-pkey="black">⬛ Black</button>
+      <button data-pkey="end">✕ End</button>
+    </div>
+    <p class="kbdHint">Start your slideshow on the Mac, then drive it here. Works in Keynote, PowerPoint, PDF, Google Slides.</p>
+    <button id="presentDone" class="kbdDone">Done</button>
+  </section>
 
   <!-- Media / volume / brightness keys -->
   <section id="media" class="panel hidden">
@@ -123,5 +138,6 @@
   <script src="keyboard.js"></script>
   <script src="clipboard.js"></script>
   <script src="media.js"></script>
+  <script src="present.js"></script>
 </body>
 </html>

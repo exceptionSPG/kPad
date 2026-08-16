@@ -9,7 +9,7 @@ server-side copy to drift out of sync.
 """
 
 # App version (keep in sync with kPad.spec). Shown in the About dialog.
-VERSION = "0.2.7"
+VERSION = "0.2.8"
 
 # Port for both HTTP and WebSocket (one URL, one QR code).
 PORT = 8787

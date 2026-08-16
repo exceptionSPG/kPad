@@ -91,6 +91,36 @@ html, body {
 }
 .panel.hidden { display: none; }
 
+/* Presenter panel */
+.presentBig { display: flex; gap: 12px; flex: 1; min-height: 220px; }
+.presentBig button {
+  flex: 1;
+  border: 1px solid #2a2f42;
+  border-radius: 16px;
+  background: var(--pad);
+  color: var(--fg);
+  font-size: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.presentBig button span { font-size: 17px; color: var(--muted); }
+.presentBig button:active { background: var(--ok); color: #06210f; }
+.presentBig button:active span { color: #06210f; }
+.presentRow { display: flex; gap: 10px; }
+.presentRow button {
+  flex: 1;
+  border: 1px solid #2a2f42;
+  border-radius: 12px;
+  background: var(--pad);
+  color: var(--fg);
+  font-size: 16px;
+  padding: 16px 0;
+}
+.presentRow button:active { background: var(--pad-active); }
+
 /* Media panel */
 .mediaRow { display: flex; gap: 10px; }
 .mediaRow button {
