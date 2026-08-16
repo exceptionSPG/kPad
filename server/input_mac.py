@@ -90,7 +90,6 @@ class MacInput:
         self._last_click_t = 0.0
         self._last_click_pos = (0.0, 0.0)
         self._click_state = 0
-        self._last_display_refresh = 0.0
 
     def _current_location(self):
         p = Quartz.CGEventGetLocation(Quartz.CGEventCreate(None))
@@ -101,13 +100,6 @@ class MacInput:
 
     # ------------------------------------------------------------- pointer --
     def move(self, dx: float, dy: float):
-        # Pick up monitors plugged in/out after launch (e.g. kPad started from
-        # Login Items, then a display connected) — refresh the clamp bounds at
-        # most every 2s so the cursor can reach a newly-added screen.
-        now = time.monotonic()
-        if now - self._last_display_refresh > 2.0:
-            self.displays.refresh()
-            self._last_display_refresh = now
         x, y = self._current_location()
         x, y = self.displays.clamp(x + dx, y + dy)
         # If a button is held, emit the matching *Dragged* event so apps see a

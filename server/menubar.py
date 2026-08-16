@@ -14,10 +14,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+import Quartz
 import rumps
 import segno
 
 from . import config
+
+RELEASES_URL = "https://github.com/exceptionSPG/kPad/releases/latest"
 from ApplicationServices import (
     AXIsProcessTrusted,
     AXIsProcessTrustedWithOptions,
@@ -86,11 +89,18 @@ class MenuBarApp(rumps.App):
             self.item_ax,
             self.item_status,
             None,
+            rumps.MenuItem("Refresh monitors", callback=self._refresh_monitors),
             rumps.MenuItem("Unpair all phones", callback=self._unpair_all),
             None,
+            rumps.MenuItem("Check for Updates…", callback=self._check_updates),
             rumps.MenuItem("About kPad", callback=self._about),
             rumps.MenuItem("Quit kPad", callback=self._quit),
         ]
+
+        # Auto-detect monitors being plugged in/out (event-driven, no polling) so
+        # the cursor bounds stay correct; "Refresh monitors" is a manual fallback.
+        self._display_cb = lambda display, flags, info: self.server.inp.displays.refresh()
+        Quartz.CGDisplayRegisterReconfigurationCallback(self._display_cb, None)
 
         self._timer = rumps.Timer(self._refresh, 2)
         self._timer.start()
@@ -136,6 +146,12 @@ class MenuBarApp(rumps.App):
                                "Every phone must enter the code again.")
         except Exception:
             pass
+
+    def _refresh_monitors(self, _):
+        self.server.inp.displays.refresh()
+
+    def _check_updates(self, _):
+        subprocess.Popen(["open", RELEASES_URL])
 
     def _about(self, _):
         msg = ("Turn any phone into a trackpad, keyboard & remote for your Mac.\n"
