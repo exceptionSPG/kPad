@@ -90,6 +90,11 @@ class MacInput:
         self._last_click_t = 0.0
         self._last_click_pos = (0.0, 0.0)
         self._click_state = 0
+        # HID-system-state source: synthetic modifier key presses combine with the
+        # real modifier state, so a synthetic Control actually "holds" for system
+        # hotkeys like Ctrl+Arrow "move a space" (a nil source leaves the arrow a
+        # plain arrow — Finder just walks the desktop icons).
+        self._src = Quartz.CGEventSourceCreate(Quartz.kCGEventSourceStateHIDSystemState)
 
     def _current_location(self):
         p = Quartz.CGEventGetLocation(Quartz.CGEventCreate(None))
@@ -143,7 +148,7 @@ class MacInput:
 
     # ----------------------------------------------------------------- key --
     def _post_key(self, keycode, is_down, flags):
-        ev = Quartz.CGEventCreateKeyboardEvent(None, keycode, is_down)
+        ev = Quartz.CGEventCreateKeyboardEvent(self._src, keycode, is_down)
         Quartz.CGEventSetFlags(ev, flags)
         self._post(ev)
 
