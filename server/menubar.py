@@ -36,6 +36,18 @@ def _resource(rel):
     return str(Path(__file__).resolve().parent.parent / rel)
 
 
+def _app_version():
+    """The bundle's version in the shipped app, or config.VERSION in dev."""
+    try:
+        from Foundation import NSBundle
+        v = NSBundle.mainBundle().objectForInfoDictionaryKey_("CFBundleShortVersionString")
+        if v:
+            return str(v)
+    except Exception:
+        pass
+    return config.VERSION
+
+
 def _current_ip():
     """The Mac's IP on whatever network it's on *right now* (recomputed, not the
     value captured at launch) — so the QR stays correct after switching Wi-Fi or
@@ -75,6 +87,8 @@ class MenuBarApp(rumps.App):
             self.item_status,
             None,
             rumps.MenuItem("Unpair all phones", callback=self._unpair_all),
+            None,
+            rumps.MenuItem("About kPad", callback=self._about),
             rumps.MenuItem("Quit kPad", callback=self._quit),
         ]
 
@@ -122,6 +136,15 @@ class MenuBarApp(rumps.App):
                                "Every phone must enter the code again.")
         except Exception:
             pass
+
+    def _about(self, _):
+        msg = ("Turn any phone into a trackpad, keyboard & remote for your Mac.\n"
+               "Fully local — no cloud, no phone app.\n\n"
+               "Built by Kailaba with ❤️\n"
+               "kailaba.com")
+        if rumps.alert(title=f"kPad {_app_version()}", message=msg,
+                       ok="Visit kailaba.com", cancel="Close") == 1:
+            subprocess.Popen(["open", "https://kailaba.com"])
 
     def _quit(self, _):
         # Close connections cleanly so phones see an immediate disconnect.
