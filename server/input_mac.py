@@ -166,10 +166,18 @@ class MacInput:
             if modifiers & bit:
                 active |= _MOD_FLAG[bit]
                 self._post_key(kv, True, active)
+        # Give the system a moment to register the modifier as held before the
+        # key — otherwise back-to-back synthetic events reach the WindowServer's
+        # symbolic-hotkey handler (e.g. Ctrl+Arrow "move a space") before the
+        # modifier state updates, and the shortcut never fires.
+        if active:
+            time.sleep(0.02)
         # The key itself, with all modifiers held.
         self._post_key(keycode, True, active)
         self._post_key(keycode, False, active)
         # Release modifiers in reverse, clearing each flag as it lifts (ends at 0).
+        if active:
+            time.sleep(0.01)
         for bit, kv in reversed(list(_MOD_KV.items())):
             if modifiers & bit:
                 active &= ~_MOD_FLAG[bit]
